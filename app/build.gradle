@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'tfajfar.wifi.p2p.walkietalkie'
+    namespace 'com.tfajfar.walkietalkie'
     compileSdk 34
 
     defaultConfig {
-        applicationId "tfajfar.wifi.p2p.walkietalkie"
+        applicationId "com.tfajfar.walkietalkie"
         minSdk 24
         targetSdk 34
         versionCode 1

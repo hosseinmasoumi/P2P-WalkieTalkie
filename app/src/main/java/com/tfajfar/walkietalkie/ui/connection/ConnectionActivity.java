@@ -1,12 +1,10 @@
-package tfajfar.wifi.p2p.walkietalkie;
+package com.tfajfar.walkietalkie.ui.connection;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
+import com.tfajfar.walkietalkie.R;
 
-import tfajfar.wifi.p2p.walkietalkie.ui.establishconnection.EstablishConnectionFragment;
-
-public class EstablishConnection extends AppCompatActivity {
+public class ConnectionActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -14,7 +12,7 @@ public class EstablishConnection extends AppCompatActivity {
         setContentView(R.layout.establish_connection_activity);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, EstablishConnectionFragment.newInstance())
+                    .replace(R.id.container, ConnectionFragment.newInstance())
                     .commitNow();
         }
     }
