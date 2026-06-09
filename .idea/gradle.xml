@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
+        <option name="resolveExternalAnnotations" value="true" />
         <option name="myGradleHome" value="E:\AndroidStudio\gradle\wrapper\dists\gradle-9.2.1-all\y90lrbqliwe68apji6m8suwx\gradle-9.2.1" />
       </GradleProjectSettings>
     </option>

@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">WalkieTalkie</string>
+    <string name="title_p2p_walkie_talkie">P2P Walkie Talkie</string>
+    <string name="subtitle_no_internet_voice">ارتباط صوتی بدون اینترنت</string>
+    <string name="loading_initializing">در حال راه‌اندازی</string>
+
+    <string name="permissions_title">دسترسی‌ها</string>
+    <string name="permissions_required_title">دسترسی‌های لازم برای ارتباط</string>
+    <string name="permissions_required_subtitle">برای کشف دستگاه‌های نزدیک و ارسال صدا، لطفاً دسترسی‌های زیر را فعال کنید.</string>
+    <string name="permission_location_title">مکان (Location)</string>
+    <string name="permission_location_desc">برای کشف دستگاه‌های نزدیک از طریق شبکه محلی لازم است.</string>
+    <string name="permission_microphone_title">میکروفون (Microphone)</string>
+    <string name="permission_microphone_desc">برای ارسال و دریافت صدا به دستگاه‌های دیگر لازم است.</string>
+    <string name="status_disabled">غیرفعال</string>
+    <string name="status_mandatory">الزامی</string>
+    <string name="permissions_info_text">در صورت عدم اعطای دسترسی‌ها، دکمه صحبت (PTT) غیرفعال باقی خواهد ماند.</string>
+    <string name="btn_grant_permissions">اعطای دسترسی‌ها</string>
+    <string name="btn_retry">تلاش دوباره</string>
+    <string name="action_settings">تنظیمات</string>
 </resources>
