@@ -1,11 +1,22 @@
-*.iml
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
-.DS_Store
-/build
-/captures
-.externalNativeBuild
+# Gradle
+.gradle/
+build/
+*.apk
+*.ap_
 
-!app/build/outputs/apk/debug/app-debug.apk
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Android
+local.properties
+proguard-rules.pro
+
+# Build outputs
+*.dex
+*.class
+bin/
+gen/
