@@ -17,4 +17,31 @@
     <string name="btn_grant_permissions">اعطای دسترسی‌ها</string>
     <string name="btn_retry">تلاش دوباره</string>
     <string name="action_settings">تنظیمات</string>
+
+    <string name="discovery_title">دستگاه‌های نزدیک</string>
+    <string name="searching">در حال جستجو...</string>
+    <string name="searching_desc">در حال یافتن دستگاه‌های نزدیک</string>
+    <string name="found_devices">دستگاه‌های یافت‌شده</string>
+    <string name="status_available">قابل اتصال</string>
+    <string name="status_in_use">در حال استفاده</string>
+    <string name="status_offline">آفلاین</string>
+    <string name="btn_connect">اتصال</string>
+    <string name="btn_rescan">جستجوی مجدد</string>
+
+    <string name="connection_status_title">وضعیت اتصال</string>
+    <string name="connected">Connected</string>
+    <string name="group_owner">Group Owner</string>
+    <string name="connected_to_group">متصل به شبکه گروهی</string>
+    <string name="devices_connected_count">%1$d devices connected</string>
+    <string name="devices_connected_desc">%1$d دستگاه متصل شده است</string>
+    <string name="reconnecting_title">در حال تلاش برای اتصال مجدد</string>
+    <string name="retry_attempt">تلاش %1$d از %2$d</string>
+    <string name="next_retry">تلاش بعدی در %1$d ثانیه</string>
+    <string name="sample_device_1">Galaxy S24 Ultra</string>
+    <string name="sample_device_2">Pixel 8 Pro</string>
+    <string name="sample_devices_count">2 devices connected</string>
+    <string name="sample_devices_desc">۲ دستگاه متصل شده است</string>
+    <string name="sample_retry_attempt">تلاش ۱ از ۳</string>
+    <string name="sample_next_retry">تلاش بعدی در ۲ ثانیه</string>
+    <string name="cd_seconds_remaining">Seconds remaining</string>
 </resources>

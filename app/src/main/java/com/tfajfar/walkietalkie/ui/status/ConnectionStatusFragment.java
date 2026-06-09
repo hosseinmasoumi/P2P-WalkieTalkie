@@ -1,4 +1,4 @@
-package com.tfajfar.walkietalkie.ui.permissions;
+package com.tfajfar.walkietalkie.ui.status;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,30 +9,19 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import com.tfajfar.walkietalkie.R;
 
-public class PermissionsFragment extends Fragment {
+public class ConnectionStatusFragment extends Fragment {
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_permissions, container, false);
+        return inflater.inflate(R.layout.fragment_connection_status, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        // Setup Toolbar
         androidx.appcompat.widget.Toolbar toolbar = view.findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.permissions_menu);
-
-        // Initialize views and click listeners here
-        view.findViewById(R.id.btn_grant_permissions).setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(getActivity(), com.tfajfar.walkietalkie.ui.discovery.DiscoveryActivity.class);
-            startActivity(intent);
-        });
-
-        view.findViewById(R.id.btn_retry).setOnClickListener(v -> {
-            // TODO: Retry permission check
-        });
     }
 }
