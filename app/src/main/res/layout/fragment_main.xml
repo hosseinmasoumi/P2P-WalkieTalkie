@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorBackground">
@@ -50,7 +51,8 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:src="@drawable/ic_wifi"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -58,6 +60,7 @@
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
                         android:layout_toEndOf="@id/iv_wifi_status"
+                        android:layout_toStartOf="@+id/iv_status_icon_right"
                         android:orientation="vertical">
 
                         <TextView
@@ -73,16 +76,18 @@
                             android:layout_height="wrap_content"
                             android:text="@string/connected_to_group"
                             android:textColor="@color/greenAccent"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/iv_status_icon_right"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:src="@drawable/ic_check_circle"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -109,7 +114,8 @@
                         android:background="@drawable/circle_background_small"
                         android:padding="10dp"
                         android:src="@drawable/ic_group"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -117,6 +123,7 @@
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
                         android:layout_toEndOf="@id/iv_devices"
+                        android:layout_toStartOf="@+id/iv_chevron_right_1"
                         android:orientation="vertical">
 
                         <TextView
@@ -132,16 +139,18 @@
                             android:layout_marginTop="2dp"
                             android:text="@string/sample_devices_desc"
                             android:textColor="@color/textSecondary"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/iv_chevron_right_1"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textSecondary" />
+                        app:tint="@color/textSecondary"
+                        android:contentDescription="@null" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -155,7 +164,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentStart="true"
-                    android:layout_topToTop="parent"
+                    android:layout_alignParentTop="true"
                     android:text="@string/volume_level"
                     android:textColor="@color/textSecondary"
                     android:textSize="12sp" />
@@ -169,7 +178,8 @@
                     android:background="@drawable/search_card_background"
                     android:gravity="bottom"
                     android:orientation="vertical"
-                    android:padding="2dp">
+                    android:padding="2dp"
+                    tools:ignore="RtlSymmetry">
 
                     <View
                         android:layout_width="match_parent"
@@ -191,6 +201,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/ptt_button_background"
+                        android:contentDescription="@string/hold_to_talk"
                         app:backgroundTint="@null"
                         app:icon="@drawable/ic_mic"
                         app:iconGravity="top"
@@ -229,17 +240,17 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:text="ضبط انتقال‌ها"
+                            android:text="@string/record_transmissions_fa"
                             android:textColor="@color/textSecondary"
-                            android:textSize="10sp" />
+                            android:textSize="12sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:text="Record\nTransmissions"
+                            android:text="@string/record_transmissions_en"
                             android:textColor="@color/textSecondary"
-                            android:textSize="9sp" />
+                            android:textSize="12sp" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:layout_width="wrap_content"
@@ -275,7 +286,8 @@
                         android:background="@drawable/circle_background_small"
                         android:padding="10dp"
                         android:src="@drawable/ic_check_circle"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -283,6 +295,7 @@
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
                         android:layout_toEndOf="@id/iv_status_check"
+                        android:layout_toStartOf="@+id/iv_chevron_right_2"
                         android:orientation="vertical">
 
                         <TextView
@@ -305,16 +318,18 @@
                             android:layout_height="wrap_content"
                             android:text="@string/status_connected_owner_desc"
                             android:textColor="@color/textSecondary"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/iv_chevron_right_2"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textSecondary" />
+                        app:tint="@color/textSecondary"
+                        android:contentDescription="@null" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -346,7 +361,8 @@
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:src="@drawable/ic_check_circle"
-                app:tint="@color/greenAccent" />
+                app:tint="@color/greenAccent"
+                android:contentDescription="@null" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -354,7 +370,8 @@
                 android:layout_centerVertical="true"
                 android:layout_marginStart="12dp"
                 android:layout_toEndOf="@id/iv_snack_icon"
-                android:text="Connected to 2 devices"
+                android:layout_toStartOf="@+id/divider"
+                android:text="@string/connected_to_2_devices"
                 android:textColor="@color/textPrimary"
                 android:textSize="13sp" />
 

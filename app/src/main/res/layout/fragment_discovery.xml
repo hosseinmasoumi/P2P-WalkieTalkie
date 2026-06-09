@@ -105,7 +105,8 @@
                         android:background="@drawable/circle_background_small"
                         android:padding="10dp"
                         android:src="@drawable/ic_phone"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -113,6 +114,7 @@
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
                         android:layout_toEndOf="@id/iv_device_1"
+                        android:layout_toStartOf="@+id/iv_signal_1"
                         android:orientation="vertical">
 
                         <TextView
@@ -146,6 +148,7 @@
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_connect_1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
@@ -156,23 +159,19 @@
                         android:textColor="@android:color/black"
                         android:textSize="12sp"
                         app:backgroundTint="@color/greenAccent"
-                        app:cornerRadius="8dp" />
+                        app:cornerRadius="8dp"
+                        android:contentDescription="@string/btn_connect" />
 
                     <ImageView
+                        android:id="@+id/iv_signal_1"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="12dp"
-                        android:layout_toStartOf="@+id/btn_connect_placeholder"
+                        android:layout_toStartOf="@+id/btn_connect_1"
                         android:src="@drawable/ic_signal"
-                        app:tint="@color/greenAccent" />
-
-                    <View
-                        android:id="@+id/btn_connect_placeholder"
-                        android:layout_width="70dp"
-                        android:layout_height="1dp"
-                        android:layout_alignParentEnd="true"
-                        android:visibility="invisible" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -199,7 +198,8 @@
                         android:background="@drawable/circle_background_small"
                         android:padding="10dp"
                         android:src="@drawable/ic_phone"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -207,6 +207,7 @@
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
                         android:layout_toEndOf="@id/iv_device_2"
+                        android:layout_toStartOf="@+id/iv_signal_2"
                         android:orientation="vertical">
 
                         <TextView
@@ -240,6 +241,7 @@
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_connect_2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
@@ -250,23 +252,19 @@
                         android:textColor="@android:color/black"
                         android:textSize="12sp"
                         app:backgroundTint="@color/greenAccent"
-                        app:cornerRadius="8dp" />
+                        app:cornerRadius="8dp"
+                        android:contentDescription="@string/btn_connect" />
 
                     <ImageView
+                        android:id="@+id/iv_signal_2"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="12dp"
-                        android:layout_toStartOf="@+id/btn_connect_placeholder_2"
+                        android:layout_toStartOf="@+id/btn_connect_2"
                         android:src="@drawable/ic_signal"
-                        app:tint="@color/textSecondary" />
-
-                    <View
-                        android:id="@+id/btn_connect_placeholder_2"
-                        android:layout_width="70dp"
-                        android:layout_height="1dp"
-                        android:layout_alignParentEnd="true"
-                        android:visibility="invisible" />
+                        app:tint="@color/textSecondary"
+                        android:contentDescription="@null" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -290,6 +288,7 @@
         app:iconTint="@color/greenAccent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:strokeColor="@color/greenAccent"
-        app:strokeWidth="1dp" />
+        app:strokeWidth="1dp"
+        android:contentDescription="@string/btn_rescan" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -44,6 +44,9 @@
     <string name="sample_retry_attempt">تلاش ۱ از ۳</string>
     <string name="sample_next_retry">تلاش بعدی در ۲ ثانیه</string>
     <string name="cd_seconds_remaining">Seconds remaining</string>
+    <string name="record_transmissions_fa">ضبط انتقال‌ها</string>
+    <string name="record_transmissions_en">Record\nTransmissions</string>
+    <string name="connected_to_2_devices">Connected to 2 devices</string>
 
     <!-- Main Screen -->
     <string name="main_title">صفحه اصلی</string>

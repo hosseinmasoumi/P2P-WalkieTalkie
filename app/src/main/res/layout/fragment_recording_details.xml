@@ -44,7 +44,8 @@
                     android:background="@drawable/circle_background_small"
                     android:padding="16dp"
                     android:src="@drawable/ic_mic"
-                    app:tint="@color/greenAccent" />
+                    app:tint="@color/greenAccent"
+                    android:contentDescription="@null" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -73,7 +74,8 @@
                             android:layout_height="14dp"
                             android:rotation="45"
                             android:src="@drawable/ic_refresh"
-                            app:tint="@color/greenAccent" />
+                            app:tint="@color/greenAccent"
+                            android:contentDescription="@null" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -103,7 +105,8 @@
                 android:divider="@drawable/divider_vertical"
                 android:orientation="horizontal"
                 android:padding="20dp"
-                android:showDividers="middle">
+                android:showDividers="middle"
+                android:baselineAligned="false">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -118,7 +121,8 @@
                         android:background="@drawable/circle_background_small"
                         android:padding="8dp"
                         android:src="@drawable/ic_calendar"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -131,14 +135,14 @@
                             android:layout_height="wrap_content"
                             android:text="@string/label_date_time"
                             android:textColor="@color/textSecondary"
-                            android:textSize="10sp" />
+                            android:textSize="12sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/sample_date"
                             android:textColor="@color/textPrimary"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -155,7 +159,8 @@
                         android:background="@drawable/circle_background_small"
                         android:padding="8dp"
                         android:src="@drawable/ic_clock"
-                        app:tint="@color/greenAccent" />
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -168,14 +173,14 @@
                             android:layout_height="wrap_content"
                             android:text="@string/label_duration"
                             android:textColor="@color/textSecondary"
-                            android:textSize="10sp" />
+                            android:textSize="12sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/sample_duration"
                             android:textColor="@color/textPrimary"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -232,7 +237,8 @@
                     android:background="@drawable/circle_background_small"
                     android:padding="12dp"
                     android:src="@drawable/ic_replay_10"
-                    app:tint="@color/greenAccent" />
+                    app:tint="@color/greenAccent"
+                    android:contentDescription="@null" />
 
                 <FrameLayout
                     android:layout_width="100dp"
@@ -247,7 +253,8 @@
                         android:src="@drawable/ic_pause"
                         app:backgroundTint="@color/greenAccent"
                         app:fabCustomSize="80dp"
-                        app:tint="@android:color/black" />
+                        app:tint="@android:color/black"
+                        android:contentDescription="@string/cd_seconds_remaining" />
                 </FrameLayout>
 
                 <ImageView
@@ -256,40 +263,25 @@
                     android:background="@drawable/circle_background_small"
                     android:padding="12dp"
                     android:src="@drawable/ic_forward_10"
-                    app:tint="@color/greenAccent" />
+                    app:tint="@color/greenAccent"
+                    android:contentDescription="@null" />
             </LinearLayout>
         </LinearLayout>
 
         <!-- Tip Box -->
-        <com.google.android.material.card.MaterialCardView
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="64dp"
-            app:cardBackgroundColor="@color/cardBackground"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="16dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_info"
-                    app:tint="@color/greenAccent" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/share_tip"
-                    android:textColor="@color/greenAccent"
-                    android:textSize="11sp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:background="@drawable/info_background"
+            android:gravity="center"
+            android:padding="16dp"
+            android:text="@string/share_tip"
+            android:textColor="@color/greenAccent"
+            android:textSize="12sp"
+            app:drawableStartCompat="@drawable/ic_info"
+            app:drawableTint="@color/greenAccent"
+            android:drawablePadding="12dp" />
 
     </LinearLayout>
 
