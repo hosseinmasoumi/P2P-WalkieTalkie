@@ -1,6 +1,6 @@
 package tfajfar.wifi.p2p.walkietalkie.ui.establishconnection;
 
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
 
@@ -32,7 +32,7 @@ public class EstablishConnectionFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mViewModel = ViewModelProviders.of(this).get(EstablishConnectionViewModel.class);
+        mViewModel = new ViewModelProvider(this).get(EstablishConnectionViewModel.class);
         // TODO: Use the ViewModel
     }
 
