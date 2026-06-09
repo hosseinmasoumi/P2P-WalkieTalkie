@@ -9,4 +9,9 @@
     <color name="textPrimary">#FFFFFF</color>
     <color name="textSecondary">#AAAAAA</color>
     <color name="greenAccent">#72C15F</color>
+    <color name="orangeAccent">#FFB300</color>
+    <color name="dotGreen">#4CAF50</color>
+    <color name="dotYellow">#FFEB3B</color>
+    <color name="dotGrey">#9E9E9E</color>
+    <color name="wifiGlow">#3372C15F</color>
 </resources>

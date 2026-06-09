@@ -17,4 +17,69 @@
     <string name="btn_grant_permissions">اعطای دسترسی‌ها</string>
     <string name="btn_retry">تلاش دوباره</string>
     <string name="action_settings">تنظیمات</string>
+
+    <string name="discovery_title">دستگاه‌های نزدیک</string>
+    <string name="searching">در حال جستجو...</string>
+    <string name="searching_desc">در حال یافتن دستگاه‌های نزدیک</string>
+    <string name="found_devices">دستگاه‌های یافت‌شده</string>
+    <string name="status_available">قابل اتصال</string>
+    <string name="status_in_use">در حال استفاده</string>
+    <string name="status_offline">آفلاین</string>
+    <string name="btn_connect">اتصال</string>
+    <string name="btn_rescan">جستجوی مجدد</string>
+
+    <string name="connection_status_title">وضعیت اتصال</string>
+    <string name="connected">Connected</string>
+    <string name="group_owner">Group Owner</string>
+    <string name="connected_to_group">متصل به شبکه گروهی</string>
+    <string name="devices_connected_count">%1$d devices connected</string>
+    <string name="devices_connected_desc">%1$d دستگاه متصل شده است</string>
+    <string name="reconnecting_title">در حال تلاش برای اتصال مجدد</string>
+    <string name="retry_attempt">تلاش %1$d از %2$d</string>
+    <string name="next_retry">تلاش بعدی در %1$d ثانیه</string>
+    <string name="sample_device_1">Galaxy S24 Ultra</string>
+    <string name="sample_device_2">Pixel 8 Pro</string>
+    <string name="sample_devices_count">2 devices connected</string>
+    <string name="sample_devices_desc">۲ دستگاه متصل شده است</string>
+    <string name="sample_retry_attempt">تلاش ۱ از ۳</string>
+    <string name="sample_next_retry">تلاش بعدی در ۲ ثانیه</string>
+    <string name="cd_seconds_remaining">Seconds remaining</string>
+
+    <!-- Main Screen -->
+    <string name="main_title">صفحه اصلی</string>
+    <string name="connected_group_owner">Connected as Group Owner</string>
+    <string name="volume_level">سطح صدا</string>
+    <string name="hold_to_talk">Hold to Talk</string>
+    <string name="record_transmissions">ضبط انتقال‌ها</string>
+    <string name="record_transmissions_desc">Record Transmissions</string>
+    <string name="connection_established">اتصال برقرار است</string>
+    <string name="connected_to_devices_snackbar">Connected to %1$d devices</string>
+    <string name="btn_close">بستن</string>
+
+    <!-- Connection Guide -->
+    <string name="guide_title">راهنمای وضعیت اتصال</string>
+    <string name="guide_header">در این صفحه می‌توانید معنی وضعیت‌های مختلف اتصال را مشاهده کنید.</string>
+    <string name="status_disconnected_title">قطع اتصال</string>
+    <string name="status_disconnected_desc">هیچ اتصال فعالی وجود ندارد.</string>
+    <string name="status_searching_title">در حال جستجو</string>
+    <string name="status_searching_desc">در حال جستجوی دستگاه‌های نزدیک...</string>
+    <string name="status_connecting_title">در حال اتصال</string>
+    <string name="status_connecting_desc">در حال اتصال به دستگاه انتخاب‌شده...</string>
+    <string name="status_connected_owner_title">متصل (مالک گروه)</string>
+    <string name="status_connected_owner_desc">شما به عنوان مالک گروه متصل هستید.</string>
+    <string name="status_connected_client_title">متصل (کاربر)</string>
+    <string name="status_connected_client_desc">شما به عنوان کاربر به گروه متصل هستید.</string>
+    <string name="reconnect_info">در صورت قطع اتصال، برنامه به‌صورت خودکار حداکثر ۳ بار برای اتصال مجدد تلاش می‌کند. فاصله بین هر تلاش، ۲ ثانیه خواهد بود.</string>
+
+    <!-- Recording Details -->
+    <string name="recording_details_title">جزئیات ضبط</string>
+    <string name="status_outgoing">OUTGOING</string>
+    <string name="status_incoming">INCOMING</string>
+    <string name="label_date_time">تاریخ و زمان</string>
+    <string name="label_duration">مدت زمان</string>
+    <string name="share_tip">برای اشتراک‌گذاری، روی فایل انگشت خود را نگه دارید.</string>
+    <string name="sample_filename">meeting_notes_2024-05-27.m4a</string>
+    <string name="sample_date">۱۴۰۳/۰۳/۰۷ - ۱۴:۳۲</string>
+    <string name="sample_duration">۰۲:۴۳</string>
+    <string name="sample_current_time">۰۱:۰۷</string>
 </resources>
