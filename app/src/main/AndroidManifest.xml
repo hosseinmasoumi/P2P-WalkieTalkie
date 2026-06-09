@@ -47,26 +47,6 @@
             android:name=".ui.connection.ConnectionActivity"
             android:exported="false" />
 
-        <activity
-            android:name=".ui.discovery.DiscoveryActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.status.ConnectionStatusActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.main.MainActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.guide.GuideActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.recording.RecordingDetailsActivity"
-            android:exported="false" />
-
     </application>
 
 </manifest>
