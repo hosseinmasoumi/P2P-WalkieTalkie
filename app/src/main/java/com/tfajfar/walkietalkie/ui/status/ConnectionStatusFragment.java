@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,8 +27,6 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
     private View viewWifiGlow;
     private android.widget.ImageView ivWifiStatus;
     private boolean isNavigating = false;
-    private int retryCount = 0;
-    private final Handler retryHandler = new Handler(Looper.getMainLooper());
 
     @Nullable
     @Override
@@ -57,12 +56,15 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
     }
 
     private void updateUI() {
+        if (!isAdded()) return;
         WifiDirectManager.ConnectionState state = wifiDirectManager.getCurrentState();
         
+        tvRetryAttempt.setVisibility(View.GONE);
+        tvNextRetry.setVisibility(View.GONE);
+
         switch (state) {
             case CONNECTED_OWNER:
             case CONNECTED_CLIENT:
-                stopRetrySimulation();
                 tvConnectionStatus.setText(R.string.connected);
                 tvConnectionStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.greenAccent));
                 tvConnectionRole.setText(state == WifiDirectManager.ConnectionState.CONNECTED_OWNER ? 
@@ -76,7 +78,6 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
                 navigateToMainDelayed();
                 break;
             case DISCOVERING:
-                stopRetrySimulation();
                 tvConnectionStatus.setText(R.string.searching);
                 tvConnectionStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.dotYellow));
                 tvConnectionRole.setText(R.string.status_searching_desc);
@@ -87,7 +88,6 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
                 tvRole.setText(R.string.status_searching_desc);
                 break;
             case CONNECTING:
-                stopRetrySimulation();
                 tvConnectionStatus.setText(R.string.status_connecting_title);
                 tvConnectionStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.orangeAccent));
                 tvConnectionRole.setText(R.string.status_connecting_desc);
@@ -107,22 +107,8 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
                 viewWifiGlow.getBackground().setTint(ContextCompat.getColor(requireContext(), R.color.dotGrey) & 0x33FFFFFF);
                 tvStatus.setText(R.string.status_disconnected_title);
                 tvRole.setText(R.string.status_disconnected_desc);
-                startRetrySimulation();
                 break;
         }
-    }
-
-    private void startRetrySimulation() {
-        if (retryCount >= 3) return;
-        retryCount++;
-        tvRetryAttempt.setText(getString(R.string.retry_attempt, retryCount, 3));
-        tvNextRetry.setText(getString(R.string.next_retry, 2));
-        retryHandler.postDelayed(this::updateUI, 2000);
-    }
-
-    private void stopRetrySimulation() {
-        retryCount = 0;
-        retryHandler.removeCallbacksAndMessages(null);
     }
 
     private void navigateToMainDelayed() {
@@ -133,7 +119,7 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
             if (isAdded() && getView() != null) {
                 Navigation.findNavController(getView()).navigate(R.id.nav_talk);
             }
-        }, 2000);
+        }, 1500);
     }
 
     @Override
@@ -147,6 +133,35 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
     public void onDisconnected() {
         if (getActivity() != null) {
             getActivity().runOnUiThread(this::updateUI);
+        }
+    }
+
+    @Override
+    public void onWifiP2pEnabled(boolean enabled) {
+        if (!enabled && isAdded()) {
+            Toast.makeText(getContext(), "Wi-Fi Direct is disabled", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onConnectionRetrying(int attempt, int max) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                tvRetryAttempt.setVisibility(View.VISIBLE);
+                tvNextRetry.setVisibility(View.VISIBLE);
+                tvRetryAttempt.setText(getString(R.string.retry_attempt, attempt, max));
+                tvNextRetry.setText(getString(R.string.next_retry, 2));
+            });
+        }
+    }
+
+    @Override
+    public void onConnectionFailed(int reason) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                updateUI();
+                Toast.makeText(getContext(), "Connection failed after retries", Toast.LENGTH_LONG).show();
+            });
         }
     }
 

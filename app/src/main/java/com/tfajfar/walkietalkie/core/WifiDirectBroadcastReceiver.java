@@ -22,15 +22,21 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
 
-        if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
+        if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
+            int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
+            wifiDirectManager.setWifiP2pEnabled(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED);
+            Log.d(TAG, "P2P state changed: " + (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED ? "ENABLED" : "DISABLED"));
+        } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             if (manager != null) {
                 manager.requestPeers(channel, wifiDirectManager.getPeerListListener());
             }
+            Log.d(TAG, "Peers changed, requesting new list");
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             if (manager == null) return;
             manager.requestConnectionInfo(channel, wifiDirectManager.getConnectionInfoListener());
+            Log.d(TAG, "Connection changed, requesting info");
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-            // Handle local device info change if needed
+            Log.d(TAG, "This device changed");
         }
     }
 }

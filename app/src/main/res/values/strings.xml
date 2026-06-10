@@ -23,6 +23,7 @@
     <string name="searching">Discovering...</string>
     <string name="searching_desc">Finding nearby devices</string>
     <string name="found_devices">Found Devices</string>
+    <string name="devices_found_count">%1$d devices found nearby</string>
     <string name="no_devices_found">No devices found</string>
     <string name="status_available">Available</string>
     <string name="status_in_use">In Use</string>

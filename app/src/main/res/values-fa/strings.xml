@@ -23,6 +23,7 @@
     <string name="searching">در حال جستجو...</string>
     <string name="searching_desc">جستجوی دستگاه‌های اطراف</string>
     <string name="found_devices">دستگاه‌های یافت شده</string>
+    <string name="devices_found_count">%1$d دستگاه در نزدیکی یافت شد</string>
     <string name="no_devices_found">دستگاهی پیدا نشد</string>
     <string name="status_available">آماده اتصال</string>
     <string name="status_in_use">در حال استفاده</string>

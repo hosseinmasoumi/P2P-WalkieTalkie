@@ -145,6 +145,30 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         }
     }
 
+    @Override
+    public void onWifiP2pEnabled(boolean enabled) {
+        if (isAdded()) {
+            requireActivity().runOnUiThread(this::updateUI);
+        }
+    }
+
+    @Override
+    public void onConnectionRetrying(int attempt, int max) {
+        if (isAdded()) {
+            requireActivity().runOnUiThread(this::updateUI);
+        }
+    }
+
+    @Override
+    public void onConnectionFailed(int reason) {
+        if (isAdded()) {
+            requireActivity().runOnUiThread(() -> {
+                updateUI();
+                Toast.makeText(getContext(), "Connection failed: " + reason, Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
     private void setupObservers(View view) {
         TextView tvStatusTitle = view.findViewById(R.id.tv_connection_status_title);
         TextView tvStatusDesc = view.findViewById(R.id.tv_connection_status_desc);
