@@ -1,0 +1,80 @@
+<resources>
+    <string name="app_name">بیسیم P2P</string>
+    <string name="title_p2p_walkie_talkie">بیسیم P2P</string>
+    <string name="subtitle_no_internet_voice">ارتباط صوتی بدون نیاز به اینترنت</string>
+    <string name="loading_initializing">در حال راه‌اندازی...</string>
+
+    <string name="permissions_title">دسترسی‌ها</string>
+    <string name="permissions_required_title">دسترسی‌های مورد نیاز</string>
+    <string name="permissions_required_subtitle">دسترسی به مکان و میکروفون برای شناسایی دستگاه‌های اطراف و ارسال صدا الزامی است.</string>
+    <string name="permission_location_title">مکان</string>
+    <string name="permission_location_desc">برای شناسایی دستگاه‌ها از طریق WiFi Direct.</string>
+    <string name="permission_microphone_title">میکروفون</string>
+    <string name="permission_microphone_desc">برای ضبط و ارسال صدا.</string>
+    <string name="status_disabled">غیرفعال</string>
+    <string name="status_mandatory">اجباری</string>
+    <string name="permissions_info_text">در صورت عدم تایید دسترسی‌ها، دکمه صحبت غیرفعال خواهد ماند.</string>
+    <string name="btn_grant_permissions">تایید دسترسی‌ها</string>
+    <string name="btn_retry">تلاش مجدد</string>
+    <string name="action_settings">تنظیمات</string>
+
+    <string name="discovery_title">دستگاه‌های نزدیک</string>
+    <string name="searching">در حال جستجو...</string>
+    <string name="searching_desc">جستجوی دستگاه‌های اطراف</string>
+    <string name="found_devices">دستگاه‌های یافت شده</string>
+    <string name="status_available">آماده اتصال</string>
+    <string name="status_in_use">در حال استفاده</string>
+    <string name="status_offline">آفلاین</string>
+    <string name="btn_connect">اتصال</string>
+    <string name="btn_rescan">جستجوی مجدد</string>
+
+    <string name="connection_status_title">وضعیت اتصال</string>
+    <string name="connected">متصل شده</string>
+    <string name="group_owner">مدیر گروه</string>
+    <string name="connected_to_group">به شبکه گروه متصل شد</string>
+    <string name="devices_connected_count">%1$d دستگاه متصل است</string>
+    <string name="devices_connected_desc">%1$d دستگاه در حال حاضر متصل هستند</string>
+    <string name="reconnecting_title">در حال تلاش برای اتصال مجدد...</string>
+    <string name="retry_attempt">تلاش %1$d از %2$d</string>
+    <string name="next_retry">تلاش مجدد تا %1$d ثانیه دیگر</string>
+    <string name="sample_devices_count">۲ دستگاه متصل</string>
+    <string name="sample_devices_desc">۲ دستگاه متصل هستند</string>
+    <string name="sample_retry_attempt">تلاش مجدد ۱/۳</string>
+    <string name="sample_next_retry">تلاش مجدد در ۲ ثانیه...</string>
+    <string name="record_transmissions_fa">ضبط مکالمات</string>
+    <string name="record_transmissions_en">ضبط\nمکالمات</string>
+    <string name="connected_to_2_devices">به ۲ دستگاه متصل شد</string>
+
+    <!-- Main Screen -->
+    <string name="main_title">گفتگو</string>
+    <string name="connected_group_owner">متصل به عنوان مدیر گروه</string>
+    <string name="volume_level">سطح صدا</string>
+    <string name="hold_to_talk">نگه دارید تا صحبت کنید</string>
+    <string name="record_transmissions">ضبط مکالمات</string>
+    <string name="record_transmissions_desc">ذخیره خودکار مکالمات</string>
+    <string name="connection_established">اتصال برقرار شد</string>
+    <string name="connected_to_devices_snackbar">به %1$d دستگاه متصل شد</string>
+    <string name="btn_close">بستن</string>
+
+    <!-- Connection Guide -->
+    <string name="guide_title">راهنمای وضعیت اتصال</string>
+    <string name="status_disconnected_title">قطع شده</string>
+    <string name="status_disconnected_desc">ارتباطی برقرار نیست.</string>
+    <string name="status_searching_title">در حال جستجو</string>
+    <string name="status_searching_desc">جستجوی دستگاه‌های اطراف...</string>
+    <string name="status_connecting_title">در حال اتصال</string>
+    <string name="status_connecting_desc">در حال برقراری ارتباط با دستگاه...</string>
+    <string name="status_connected_owner_title">متصل (مدیر گروه)</string>
+    <string name="status_connected_owner_desc">شما به عنوان مدیر گروه متصل هستید.</string>
+    <string name="status_connected_client_title">متصل (عضو)</string>
+    <string name="status_connected_client_desc">شما به عنوان عضو متصل هستید.</string>
+
+    <!-- Recordings -->
+    <string name="recordings_title">ضبط شده‌ها</string>
+    <string name="recording_details_title">پخش‌کننده</string>
+    <string name="status_outgoing">خروجی</string>
+    <string name="status_incoming">ورودی</string>
+    <string name="label_date_time">تاریخ و زمان</string>
+    <string name="label_duration">مدت زمان</string>
+    <string name="share_tip">برای اشتراک‌گذاری، روی فایل نگه دارید.</string>
+</resources>

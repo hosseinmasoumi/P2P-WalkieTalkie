@@ -1,5 +1,7 @@
 package com.tfajfar.walkietalkie.ui.connection;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -7,7 +9,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import com.tfajfar.walkietalkie.R;
 
@@ -26,11 +30,27 @@ public class SplashFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // سه ثانیه صبر میکنیم و بعد میریم مرحله بعد
         new Handler().postDelayed(() -> {
-            if (getActivity() instanceof SplashCallback) {
-                ((SplashCallback) getActivity()).onSplashFinished();
+            if (isAdded()) {
+                if (getActivity() instanceof SplashCallback) {
+                    ((SplashCallback) getActivity()).onSplashFinished();
+                } else {
+                    try {
+                        if (hasAllPermissions()) {
+                            Navigation.findNavController(view).navigate(R.id.action_splash_to_main);
+                        } else {
+                            Navigation.findNavController(view).navigate(R.id.action_splash_to_permissions);
+                        }
+                    } catch (IllegalStateException e) {
+                        // Not hosted in a NavHostFragment
+                    }
+                }
             }
         }, 2000);
+    }
+
+    private boolean hasAllPermissions() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return false;
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
     }
 }
