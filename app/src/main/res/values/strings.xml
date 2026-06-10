@@ -100,4 +100,9 @@
     <string name="sample_date">2024-12-15 14:30</string>
     <string name="sample_duration">00:15</string>
     <string name="sample_current_time">00:07</string>
+    <string name="db_0">0 dB</string>
+    <string name="db_12">-12</string>
+    <string name="db_24">-24</string>
+    <string name="db_36">-36</string>
+    <string name="cd_mic_icon">Microphone Icon</string>
 </resources>

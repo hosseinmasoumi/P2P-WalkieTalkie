@@ -13,6 +13,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_menu"
         app:title="@string/main_title"
+        app:titleCentered="true"
         app:titleTextColor="@color/textPrimary" />
 
     <ScrollView
@@ -28,151 +29,235 @@
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp">
 
-            <!-- Header Connection Status Card -->
+            <!-- Connection Status Card (Top) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/cardBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/greenAccent"
+                app:strokeWidth="1.5dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:id="@+id/iv_wifi_status"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_background_small"
+                        android:backgroundTint="#1A72C15F"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_wifi"
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_toEndOf="@id/iv_wifi_status"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_connection_status_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/connected_group_owner"
+                            android:textColor="@color/greenAccent"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            app:fontFamily="@font/vazir_font" />
+
+                        <TextView
+                            android:id="@+id/tv_connection_status_desc"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/connected_to_group"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="12sp"
+                            app:fontFamily="@font/vazir_font" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_check_circle"
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Connected Devices Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_devices"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardBackgroundColor="@color/cardBackground"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
                 app:strokeColor="#1AFFFFFF"
                 app:strokeWidth="1dp">
 
-                <LinearLayout
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="16dp">
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
+                    <ImageView
+                        android:id="@+id/iv_devices_icon"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_background_small"
+                        android:backgroundTint="#1AFFFFFF"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_group"
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
 
-                        <ImageView
-                            android:id="@+id/iv_wifi_status"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:src="@drawable/ic_wifi"
-                            app:tint="@color/greenAccent"
-                            android:contentDescription="@null" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="16dp"
-                            android:layout_toEndOf="@id/iv_wifi_status"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tv_connection_status_title"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/connected"
-                                android:textColor="@color/greenAccent"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tv_connection_status_desc"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/connected_to_group"
-                                android:textColor="@color/textSecondary"
-                                android:textSize="13sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:src="@drawable/ic_check_circle"
-                            app:tint="@color/greenAccent"
-                            android:contentDescription="@null" />
-                    </RelativeLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="#1AFFFFFF" />
-
-                    <RelativeLayout
-                        android:id="@+id/rl_devices_info"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:id="@+id/iv_devices_mini"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:src="@drawable/ic_group"
-                            app:tint="@color/textSecondary"
-                            android:contentDescription="@null" />
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_toEndOf="@id/iv_devices_icon"
+                        android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tv_devices_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="12dp"
-                            android:layout_toEndOf="@id/iv_devices_mini"
                             android:text="@string/sample_devices_count"
                             android:textColor="@color/textPrimary"
-                            android:textSize="14sp" />
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            app:fontFamily="@font/vazir_font" />
 
-                        <ImageView
-                            android:id="@+id/iv_chevron_right_main"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:src="@drawable/ic_chevron_right"
-                            app:tint="@color/textSecondary"
-                            android:contentDescription="@null" />
-                    </RelativeLayout>
-                </LinearLayout>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/sample_devices_desc"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="12sp"
+                            app:fontFamily="@font/vazir_font" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/textSecondary"
+                        android:contentDescription="@null" />
+                </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Control Area -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:minHeight="360dp">
+                android:layout_height="320dp">
 
                 <!-- Volume Meter -->
                 <LinearLayout
                     android:id="@+id/volume_meter_container"
-                    android:layout_width="16dp"
-                    android:layout_height="220dp"
-                    android:background="@drawable/search_card_background"
-                    android:gravity="bottom"
-                    android:orientation="vertical"
-                    android:padding="2dp"
-                    app:layout_constraintBottom_toBottomOf="@id/ptt_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/ptt_container"
-                    tools:ignore="RtlSymmetry">
+                    app:layout_constraintTop_toTopOf="parent">
 
-                    <View
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/db_0"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="11sp" />
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="40dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/db_12"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="11sp" />
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="40dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/db_24"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="11sp" />
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="40dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/db_36"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:id="@+id/volume_meter_bar"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:background="@drawable/status_dot"
-                        android:backgroundTint="@color/greenAccent" />
+                        android:layout_width="16dp"
+                        android:layout_height="220dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/search_card_background"
+                        android:gravity="bottom"
+                        android:orientation="vertical"
+                        android:padding="3dp">
+
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#33FFA000" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#33FFA000" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
+                        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="@color/greenAccent" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <TextView
@@ -184,15 +269,16 @@
                     android:textSize="11sp"
                     app:layout_constraintEnd_toEndOf="@id/volume_meter_container"
                     app:layout_constraintStart_toStartOf="@id/volume_meter_container"
-                    app:layout_constraintTop_toBottomOf="@id/volume_meter_container" />
+                    app:layout_constraintTop_toBottomOf="@id/volume_meter_container"
+                    app:fontFamily="@font/vazir_font" />
 
-                <!-- PTT Button -->
+                <!-- PTT Button Section -->
                 <FrameLayout
                     android:id="@+id/ptt_container"
-                    android:layout_width="240dp"
-                    android:layout_height="240dp"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
                     android:background="@drawable/ptt_button_outer"
-                    android:padding="24dp"
+                    android:padding="32dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -202,50 +288,84 @@
                         android:id="@+id/btn_ptt"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@drawable/ptt_button_background"
+                        android:background="@drawable/ptt_button_inner"
                         android:contentDescription="@string/hold_to_talk"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
                         app:backgroundTint="@null"
                         app:icon="@drawable/ic_mic"
                         app:iconGravity="top"
                         app:iconPadding="0dp"
                         app:iconSize="56dp"
-                        app:iconTint="@android:color/white" />
+                        app:iconTint="@android:color/white"
+                        app:rippleColor="#4DFFFFFF" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom|center_horizontal"
-                        android:layout_marginBottom="44dp"
+                        android:layout_marginBottom="20dp"
                         android:text="@string/hold_to_talk"
                         android:textColor="@android:color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        app:fontFamily="@font/vazir_font" />
                 </FrameLayout>
 
-                <!-- Record Toggle -->
+                <!-- Small decoration dots around PTT -->
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/divider_vertical"
+                    android:alpha="0.3"
+                    android:contentDescription="@null"
+                    app:layout_constraintBottom_toBottomOf="@id/ptt_container"
+                    app:layout_constraintEnd_toStartOf="@id/ptt_container"
+                    app:layout_constraintTop_toTopOf="@id/ptt_container" />
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="12dp"
+                    android:src="@drawable/divider_vertical"
+                    android:alpha="0.3"
+                    android:contentDescription="@null"
+                    app:layout_constraintBottom_toBottomOf="@id/ptt_container"
+                    app:layout_constraintStart_toEndOf="@id/ptt_container"
+                    app:layout_constraintTop_toTopOf="@id/ptt_container" />
+
+                <!-- Record Transmissions Toggle Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="@color/cardBackground"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
+                    app:strokeColor="#1AFFFFFF"
+                    app:strokeWidth="1dp"
                     app:layout_constraintBottom_toBottomOf="@id/ptt_container"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/ptt_container">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_height="109dp"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_mic"
-                            app:tint="@color/textSecondary"
-                            android:contentDescription="@null" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:maxWidth="80dp"
+                            android:text="@string/record_transmissions_en"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="10sp"
+                            app:fontFamily="@font/vazir_font" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/recordTransmissionsSwitch"
@@ -255,80 +375,154 @@
                             android:checked="false"
                             app:thumbTint="@android:color/white"
                             app:trackTint="@color/greenAccent" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:maxWidth="80dp"
-                            android:gravity="center"
-                            android:text="@string/record_transmissions"
-                            android:textColor="@color/textSecondary"
-                            android:textSize="11sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <!-- Bottom Connection Status Card (as seen in image) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_bottom_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@color/cardBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#1AFFFFFF"
+                app:strokeWidth="1dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:id="@+id/iv_status_check"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_background_small"
+                        android:backgroundTint="#1A72C15F"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_check_circle"
+                        app:tint="@color/greenAccent"
+                        android:contentDescription="@null" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_toEndOf="@id/iv_status_check"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/connection_established"
+                            android:textColor="@color/greenAccent"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            app:fontFamily="@font/vazir_font" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/connected"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="12sp"
+                            app:fontFamily="@font/vazir_font" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/textSecondary"
+                        android:contentDescription="@null" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Bottom Spacer -->
             <View
                 android:layout_width="match_parent"
-                android:layout_height="100dp" />
+                android:layout_height="20dp" />
 
         </LinearLayout>
     </ScrollView>
 
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/snackbar_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="16dp"
-                        android:visibility="visible"
-                        app:cardBackgroundColor="#E61E1E1E"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="8dp"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:strokeColor="#33FFFFFF"
-                        app:strokeWidth="1dp">
+    <!-- Custom Snackbar/Notification Area -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/snackbar_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:visibility="visible"
+        app:cardBackgroundColor="#E61E1E1E"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:strokeColor="#33FFFFFF"
+        app:strokeWidth="1dp">
 
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:padding="16dp">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
 
-                            <ImageView
-                                android:id="@+id/iv_snack_icon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_alignParentStart="true"
-                                android:layout_centerVertical="true"
-                                android:src="@drawable/ic_info"
-                                app:tint="@color/greenAccent"
-                                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/iv_snack_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_check_circle"
+                app:tint="@color/greenAccent"
+                android:contentDescription="@null" />
 
-                            <TextView
-                                android:id="@+id/tv_snack_text"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_marginStart="12dp"
-                                android:layout_toEndOf="@id/iv_snack_icon"
-                                android:layout_toStartOf="@+id/btn_close_snack"
-                                android:text="@string/not_connected"
-                                android:textColor="@color/textPrimary"
-                                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/tv_snack_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:layout_toEndOf="@id/iv_snack_icon"
+                android:layout_toStartOf="@+id/v_snack_divider"
+                android:text="@string/connected_to_2_devices"
+                android:textColor="@color/textPrimary"
+                android:textSize="13sp"
+                app:fontFamily="@font/vazir_font" />
 
-                            <TextView
-                                android:id="@+id/btn_close_snack"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:padding="4dp"
-                                android:text="@string/btn_close"
-                                android:textColor="@color/greenAccent"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-                        </RelativeLayout>
-                    </com.google.android.material.card.MaterialCardView>
+            <View
+                android:id="@+id/v_snack_divider"
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="12dp"
+                android:layout_toStartOf="@+id/btn_close_snack"
+                android:background="#33FFFFFF" />
+
+            <TextView
+                android:id="@+id/btn_close_snack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:padding="4dp"
+                android:text="@string/btn_close"
+                android:textColor="@color/greenAccent"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                app:fontFamily="@font/vazir_font" />
+        </RelativeLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

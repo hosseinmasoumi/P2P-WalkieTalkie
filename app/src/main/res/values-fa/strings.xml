@@ -91,4 +91,9 @@
     <string name="unknown">نامشخص</string>
     <string name="unknown_date">تاریخ نامشخص</string>
     <string name="not_connected">ارتباط برقرار نیست</string>
+    <string name="db_0">۰ دسی‌بل</string>
+    <string name="db_12">-۱۲</string>
+    <string name="db_24">-۲۴</string>
+    <string name="db_36">-۳۶</string>
+    <string name="cd_mic_icon">آیکون میکروفون</string>
 </resources>

@@ -89,7 +89,7 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         view.findViewById(R.id.btn_close_snack).setOnClickListener(v -> 
             view.findViewById(R.id.snackbar_container).setVisibility(View.GONE));
         
-        view.findViewById(R.id.rl_devices_info).setOnClickListener(v ->
+        view.findViewById(R.id.card_devices).setOnClickListener(v ->
             Navigation.findNavController(v).navigate(R.id.nav_devices));
 
         setupObservers(view);
