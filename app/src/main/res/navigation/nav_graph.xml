@@ -38,24 +38,52 @@
         android:id="@+id/nav_talk"
         android:name="com.tfajfar.walkietalkie.ui.main.MainFragment"
         android:label="Talk"
-        tools:layout="@layout/fragment_main" />
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_main_to_status"
+            app:destination="@id/connectionStatusFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_devices"
         android:name="com.tfajfar.walkietalkie.ui.discovery.DiscoveryFragment"
         android:label="Devices"
-        tools:layout="@layout/fragment_discovery" />
+        tools:layout="@layout/fragment_discovery">
+        <action
+            android:id="@+id/action_discovery_to_status"
+            app:destination="@id/connectionStatusFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_recordings"
         android:name="com.tfajfar.walkietalkie.ui.recording.RecordingsFragment"
         android:label="Recordings"
-        tools:layout="@layout/fragment_recordings" />
+        tools:layout="@layout/fragment_recordings">
+        <action
+            android:id="@+id/action_recordings_to_details"
+            app:destination="@id/recordingDetailsFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.tfajfar.walkietalkie.ui.settings.SettingsFragment"
         android:label="Settings"
         tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/connectionStatusFragment"
+        android:name="com.tfajfar.walkietalkie.ui.status.ConnectionStatusFragment"
+        android:label="Connection Status"
+        tools:layout="@layout/fragment_connection_status" />
+
+    <fragment
+        android:id="@+id/recordingDetailsFragment"
+        android:name="com.tfajfar.walkietalkie.ui.recording.RecordingDetailsFragment"
+        android:label="Recording Details"
+        tools:layout="@layout/fragment_recording_details">
+        <argument
+            android:name="filePath"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

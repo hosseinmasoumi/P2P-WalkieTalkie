@@ -14,6 +14,8 @@ import com.tfajfar.walkietalkie.R;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.core.content.ContextCompat;
+
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
     private final List<WifiP2pDevice> devices = new ArrayList<>();
@@ -43,8 +45,26 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WifiP2pDevice device = devices.get(position);
-        holder.tvName.setText(device.deviceName);
+        holder.tvName.setText(device.deviceName != null && !device.deviceName.isEmpty() ? device.deviceName : device.deviceAddress);
         holder.tvStatus.setText(getDeviceStatus(device.status));
+        
+        int dotColor;
+        switch (device.status) {
+            case WifiP2pDevice.AVAILABLE:
+                dotColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.dotGreen);
+                break;
+            case WifiP2pDevice.CONNECTED:
+                dotColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.greenAccent);
+                break;
+            case WifiP2pDevice.INVITED:
+                dotColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.orangeAccent);
+                break;
+            default:
+                dotColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.dotGrey);
+                break;
+        }
+        holder.itemView.findViewById(R.id.view_status_dot).getBackground().setTint(dotColor);
+
         holder.itemView.findViewById(R.id.btn_connect).setOnClickListener(v -> listener.onDeviceClick(device));
     }
 

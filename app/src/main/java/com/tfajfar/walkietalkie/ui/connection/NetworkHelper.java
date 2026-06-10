@@ -2,7 +2,8 @@ package com.tfajfar.walkietalkie.ui.connection;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.widget.Toast;
 
 public class NetworkHelper {
@@ -11,9 +12,14 @@ public class NetworkHelper {
         ConnectivityManager connectivityManager =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+        Network network = connectivityManager.getActiveNetwork();
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+        boolean isConnected = capabilities != null && (
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
 
-        if (activeNetwork == null || !activeNetwork.isConnected()) {
+        if (!isConnected) {
             Toast.makeText(context, "اینترنت خاموش است. لطفاً اینترنت را روشن کنید.", Toast.LENGTH_LONG).show();
         }
     }

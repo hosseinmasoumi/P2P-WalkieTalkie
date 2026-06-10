@@ -44,8 +44,36 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         File file = recordings.get(position);
-        holder.tvFilename.setText(file.getName());
-        holder.tvDateDuration.setText("Recording from " + file.getName()); // Mock duration/date
+        String name = file.getName();
+        holder.tvFilename.setText(name);
+        
+        // Parse name: 20241215_143022_OUT.amr
+        String dateStr = "";
+        String direction = "OUT";
+        if (name.contains("_")) {
+            String[] parts = name.split("_");
+            if (parts.length >= 3) {
+                String d = parts[0];
+                String t = parts[1];
+                if (d.length() == 8 && t.length() == 6) {
+                    dateStr = d.substring(0, 4) + "-" + d.substring(4, 6) + "-" + d.substring(6, 8) + " " +
+                              t.substring(0, 2) + ":" + t.substring(2, 4);
+                }
+                direction = parts[2].split("\\.")[0];
+            }
+        }
+        
+        holder.tvDateDuration.setText(dateStr.isEmpty() ? holder.itemView.getContext().getString(R.string.unknown_date) : dateStr + " • 00:00");
+        
+        if ("IN".equalsIgnoreCase(direction)) {
+            holder.ivDirection.setImageResource(R.drawable.ic_refresh); // Using refresh as placeholder for IN
+            holder.ivDirection.setRotation(225);
+            holder.ivDirection.setContentDescription(holder.itemView.getContext().getString(R.string.status_incoming));
+        } else {
+            holder.ivDirection.setImageResource(R.drawable.ic_mic);
+            holder.ivDirection.setRotation(0);
+            holder.ivDirection.setContentDescription(holder.itemView.getContext().getString(R.string.status_outgoing));
+        }
 
         holder.itemView.setOnClickListener(v -> listener.onRecordingClick(file));
         holder.itemView.setOnLongClickListener(v -> {

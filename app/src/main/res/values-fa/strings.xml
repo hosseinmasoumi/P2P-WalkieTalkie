@@ -12,6 +12,7 @@
     <string name="permission_microphone_title">میکروفون</string>
     <string name="permission_microphone_desc">برای ضبط و ارسال صدا.</string>
     <string name="status_disabled">غیرفعال</string>
+    <string name="status_granted">تایید شده</string>
     <string name="status_mandatory">اجباری</string>
     <string name="permissions_info_text">در صورت عدم تایید دسترسی‌ها، دکمه صحبت غیرفعال خواهد ماند.</string>
     <string name="btn_grant_permissions">تایید دسترسی‌ها</string>
@@ -22,6 +23,7 @@
     <string name="searching">در حال جستجو...</string>
     <string name="searching_desc">جستجوی دستگاه‌های اطراف</string>
     <string name="found_devices">دستگاه‌های یافت شده</string>
+    <string name="no_devices_found">دستگاهی پیدا نشد</string>
     <string name="status_available">آماده اتصال</string>
     <string name="status_in_use">در حال استفاده</string>
     <string name="status_offline">آفلاین</string>
@@ -52,6 +54,11 @@
     <string name="hold_to_talk">نگه دارید تا صحبت کنید</string>
     <string name="record_transmissions">ضبط مکالمات</string>
     <string name="record_transmissions_desc">ذخیره خودکار مکالمات</string>
+    <string name="auto_delete_older">حذف خودکار (بیشتر از ۷ روز)</string>
+    <string name="storage_location_title">محل ذخیره‌سازی</string>
+    <string name="about_app_title">درباره برنامه</string>
+    <string name="app_demo_desc">دموی بیسیم P2P Walkie Talkie</string>
+    <string name="version_format">نسخه %s</string>
     <string name="connection_established">اتصال برقرار شد</string>
     <string name="connected_to_devices_snackbar">به %1$d دستگاه متصل شد</string>
     <string name="btn_close">بستن</string>
@@ -77,4 +84,11 @@
     <string name="label_date_time">تاریخ و زمان</string>
     <string name="label_duration">مدت زمان</string>
     <string name="share_tip">برای اشتراک‌گذاری، روی فایل نگه دارید.</string>
+    <string name="btn_share">اشتراک‌گذاری</string>
+    <string name="btn_delete">حذف</string>
+    <string name="deleted_success">فایل حذف شد</string>
+    <string name="playback_sim">شبیه‌سازی پخش</string>
+    <string name="unknown">نامشخص</string>
+    <string name="unknown_date">تاریخ نامشخص</string>
+    <string name="not_connected">ارتباط برقرار نیست</string>
 </resources>

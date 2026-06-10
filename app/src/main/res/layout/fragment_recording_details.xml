@@ -48,7 +48,7 @@
                     android:contentDescription="@null" />
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:layout_marginStart="16dp"
@@ -56,12 +56,15 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tv_detail_filename"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/sample_filename"
                         android:textColor="@color/textPrimary"
                         android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:ellipsize="middle"
+                        android:singleLine="true" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -70,14 +73,15 @@
                         android:gravity="center_vertical">
 
                         <ImageView
+                            android:id="@+id/iv_detail_direction_icon"
                             android:layout_width="14dp"
                             android:layout_height="14dp"
-                            android:rotation="45"
-                            android:src="@drawable/ic_refresh"
+                            android:src="@drawable/ic_mic"
                             app:tint="@color/greenAccent"
                             android:contentDescription="@null" />
 
                         <TextView
+                            android:id="@+id/tv_detail_direction"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
@@ -138,6 +142,7 @@
                             android:textSize="12sp" />
 
                         <TextView
+                            android:id="@+id/tv_detail_date"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/sample_date"
@@ -248,6 +253,7 @@
                     android:padding="10dp">
 
                     <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/fab_play_pause"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_pause"
@@ -266,6 +272,40 @@
                     app:tint="@color/greenAccent"
                     android:contentDescription="@null" />
             </LinearLayout>
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_share"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="@string/btn_share"
+                android:textAllCaps="false"
+                android:textColor="@color/greenAccent"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/greenAccent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_delete"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/btn_delete"
+                android:textAllCaps="false"
+                android:textColor="@color/statusRed"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/statusRed" />
         </LinearLayout>
 
         <!-- Tip Box -->

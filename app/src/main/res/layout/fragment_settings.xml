@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Settings"
+        android:text="@string/action_settings"
         android:textColor="@color/textPrimary"
         android:textSize="24sp"
         android:textStyle="bold"
@@ -21,7 +21,9 @@
         android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/cardBackground"
         app:cardCornerRadius="12dp"
-        app:cardElevation="0dp">
+        app:cardElevation="0dp"
+        app:strokeColor="#1AFFFFFF"
+        app:strokeWidth="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -36,7 +38,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Record Transmissions"
+                    android:text="@string/record_transmissions"
                     android:textColor="@color/textPrimary"
                     android:textSize="16sp" />
 
@@ -62,11 +64,12 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Auto-delete (> 7 days)"
+                    android:text="@string/auto_delete_older"
                     android:textColor="@color/textPrimary"
                     android:textSize="16sp" />
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_auto_delete"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
@@ -79,7 +82,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Storage Location"
+        android:text="@string/storage_location_title"
         android:textColor="@color/textSecondary"
         android:textSize="12sp"
         android:layout_marginTop="24dp"
@@ -104,7 +107,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Version 1.0"
+        android:text="-"
         android:textColor="@color/textSecondary"
         android:textSize="12sp"
         android:layout_marginBottom="8dp"/>
@@ -113,7 +116,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="P2P Walkie Talkie Demo"
+        android:text="@string/app_demo_desc"
         android:textColor="@color/textSecondary"
         android:textSize="12sp" />
 

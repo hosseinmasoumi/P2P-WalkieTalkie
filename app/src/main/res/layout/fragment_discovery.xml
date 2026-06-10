@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorBackground">
@@ -14,262 +15,88 @@
         app:title="@string/discovery_title"
         app:titleTextColor="@color/textPrimary" />
 
-    <ScrollView
+    <LinearLayout
+        android:id="@+id/ll_searching"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:scrollbars="none"
-        app:layout_constraintBottom_toTopOf="@+id/btn_rescan"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:background="@drawable/search_card_background"
+        android:gravity="center_vertical"
+        android:padding="24dp"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <FrameLayout
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/circle_background">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_gravity="center"
+                android:layout_marginEnd="-20dp"
+                android:background="@drawable/status_dot"
+                android:backgroundTint="@color/orangeAccent" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <!-- Searching Card -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/search_card_background"
-                android:gravity="center_vertical"
-                android:padding="24dp">
-
-                <FrameLayout
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/circle_background">
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:layout_gravity="center"
-                        android:layout_marginEnd="-20dp"
-                        android:background="@drawable/status_dot"
-                        android:backgroundTint="@color/orangeAccent" />
-                </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/searching"
-                        android:textColor="@color/orangeAccent"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/searching_desc"
-                        android:textColor="@color/textSecondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
-            </LinearLayout>
+            android:layout_marginStart="20dp"
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="16dp"
-                android:text="@string/found_devices"
+                android:text="@string/searching"
+                android:textColor="@color/orangeAccent"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/searching_desc"
                 android:textColor="@color/textSecondary"
-                android:textSize="13sp" />
-
-            <!-- Device Item 1 -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/cardBackground"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/iv_device_1"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/circle_background_small"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_phone"
-                        app:tint="@color/greenAccent"
-                        android:contentDescription="@null" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iv_device_1"
-                        android:layout_toStartOf="@+id/iv_signal_1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/sample_device_1"
-                            android:textColor="@color/textPrimary"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical">
-
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:background="@drawable/status_dot"
-                                android:backgroundTint="@color/dotGreen" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="@string/status_available"
-                                android:textColor="@color/textSecondary"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_connect_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:minWidth="70dp"
-                        android:text="@string/btn_connect"
-                        android:textAllCaps="false"
-                        android:textColor="@android:color/black"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/greenAccent"
-                        app:cornerRadius="8dp"
-                        android:contentDescription="@string/btn_connect" />
-
-                    <ImageView
-                        android:id="@+id/iv_signal_1"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="12dp"
-                        android:layout_toStartOf="@+id/btn_connect_1"
-                        android:src="@drawable/ic_signal"
-                        app:tint="@color/greenAccent"
-                        android:contentDescription="@null" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Device Item 2 -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/cardBackground"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/iv_device_2"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/circle_background_small"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_phone"
-                        app:tint="@color/greenAccent"
-                        android:contentDescription="@null" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iv_device_2"
-                        android:layout_toStartOf="@+id/iv_signal_2"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/sample_device_2"
-                            android:textColor="@color/textPrimary"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical">
-
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:background="@drawable/status_dot"
-                                android:backgroundTint="@color/dotGreen" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="@string/status_available"
-                                android:textColor="@color/textSecondary"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_connect_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:minWidth="70dp"
-                        android:text="@string/btn_connect"
-                        android:textAllCaps="false"
-                        android:textColor="@android:color/black"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/greenAccent"
-                        app:cornerRadius="8dp"
-                        android:contentDescription="@string/btn_connect" />
-
-                    <ImageView
-                        android:id="@+id/iv_signal_2"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="12dp"
-                        android:layout_toStartOf="@+id/btn_connect_2"
-                        android:src="@drawable/ic_signal"
-                        app:tint="@color/textSecondary"
-                        android:contentDescription="@null" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
+                android:textSize="12sp" />
         </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_found_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="32dp"
+        android:text="@string/found_devices"
+        android:textColor="@color/textSecondary"
+        android:textSize="13sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ll_searching" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_devices"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_rescan"
+        app:layout_constraintTop_toBottomOf="@id/tv_found_label"
+        tools:listitem="@layout/item_device" />
+
+    <TextView
+        android:id="@+id/tv_empty_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_devices_found"
+        android:textColor="@color/textSecondary"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rv_devices"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/rv_devices" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_rescan"
