@@ -1,5 +1,6 @@
 package com.tfajfar.walkietalkie.ui.recording;
 
+import android.media.MediaMetadataRetriever;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import com.tfajfar.walkietalkie.R;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.ViewHolder> {
 
@@ -63,10 +65,13 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
             }
         }
         
-        holder.tvDateDuration.setText(dateStr.isEmpty() ? holder.itemView.getContext().getString(R.string.unknown_date) : dateStr + " • 00:00");
+        String duration = getDuration(file);
+        holder.tvDateDuration.setText(String.format("%s • %s", 
+                dateStr.isEmpty() ? holder.itemView.getContext().getString(R.string.unknown_date) : dateStr,
+                duration));
         
         if ("IN".equalsIgnoreCase(direction)) {
-            holder.ivDirection.setImageResource(R.drawable.ic_refresh); // Using refresh as placeholder for IN
+            holder.ivDirection.setImageResource(R.drawable.ic_refresh);
             holder.ivDirection.setRotation(225);
             holder.ivDirection.setContentDescription(holder.itemView.getContext().getString(R.string.status_incoming));
         } else {
@@ -81,6 +86,22 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
             return true;
         });
         holder.btnPlay.setOnClickListener(v -> listener.onRecordingClick(file));
+    }
+
+    private String getDuration(File file) {
+        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+            retriever.setDataSource(file.getAbsolutePath());
+            String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (time != null) {
+                long timeInMillis = Long.parseLong(time);
+                long seconds = (timeInMillis / 1000) % 60;
+                long minutes = (timeInMillis / (1000 * 60)) % 60;
+                return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return "00:00";
     }
 
     @Override
