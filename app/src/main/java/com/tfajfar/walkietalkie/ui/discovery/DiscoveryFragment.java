@@ -50,27 +50,50 @@ public class DiscoveryFragment extends Fragment implements DeviceAdapter.OnDevic
     }
 
     private void startDiscovery() {
+        updateSearchingUI(true, getString(R.string.searching), getString(R.string.searching_desc));
         wifiDirectManager.discoverPeers(peers -> {
-            adapter.updateDevices(peers);
-            View emptyState = getView() != null ? getView().findViewById(R.id.tv_empty_state) : null;
-            if (emptyState != null) {
-                emptyState.setVisibility(peers.isEmpty() ? View.VISIBLE : View.GONE);
+            if (isAdded()) {
+                adapter.updateDevices(peers);
+                View emptyState = getView() != null ? getView().findViewById(R.id.tv_empty_state) : null;
+                if (emptyState != null) {
+                    emptyState.setVisibility(peers.isEmpty() ? View.VISIBLE : View.GONE);
+                }
+                if (!peers.isEmpty()) {
+                    updateSearchingUI(false, getString(R.string.found_devices), peers.size() + " devices found nearby");
+                }
             }
         });
     }
 
+    private void updateSearchingUI(boolean isSearching, String title, String desc) {
+        if (getView() == null) return;
+        android.widget.TextView tvTitle = getView().findViewById(R.id.ll_searching).findViewById(R.id.tv_searching_title);
+        android.widget.TextView tvDesc = getView().findViewById(R.id.ll_searching).findViewById(R.id.tv_searching_desc);
+        View progress = getView().findViewById(R.id.ll_searching).findViewById(R.id.progress_indicator);
+        
+        if (tvTitle != null) tvTitle.setText(title);
+        if (tvDesc != null) tvDesc.setText(desc);
+        if (progress != null) progress.setVisibility(isSearching ? View.VISIBLE : View.INVISIBLE);
+    }
+
     @Override
     public void onDeviceClick(WifiP2pDevice device) {
+        updateSearchingUI(true, "Connecting...", "Connecting to " + device.deviceName);
         wifiDirectManager.connect(device, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Toast.makeText(getContext(), "Connecting to " + device.deviceName, Toast.LENGTH_SHORT).show();
-                Navigation.findNavController(requireView()).navigate(R.id.action_discovery_to_status);
+                if (isAdded()) {
+                    Toast.makeText(getContext(), "Connecting to " + device.deviceName, Toast.LENGTH_SHORT).show();
+                    Navigation.findNavController(requireView()).navigate(R.id.action_discovery_to_status);
+                }
             }
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(getContext(), "Connection failed: " + reason, Toast.LENGTH_SHORT).show();
+                if (isAdded()) {
+                    updateSearchingUI(false, "Connection Failed", "Reason: " + reason);
+                    Toast.makeText(getContext(), "Connection failed: " + reason, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

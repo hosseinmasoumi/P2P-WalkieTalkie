@@ -7,6 +7,7 @@ import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
@@ -97,17 +98,64 @@ public class WifiDirectManager {
         }
     }
 
+    private int retryCount = 0;
+    private static final int MAX_RETRIES = 3;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
     public void connect(WifiP2pDevice device, WifiP2pManager.ActionListener listener) {
+        retryCount = 0;
+        performConnect(device, listener);
+    }
+
+    private void performConnect(WifiP2pDevice device, WifiP2pManager.ActionListener listener) {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         currentState = ConnectionState.CONNECTING;
         try {
-            manager.connect(channel, config, listener);
+            manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    if (listener != null) listener.onSuccess();
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        Log.d(TAG, "Connection failed, retrying " + retryCount + "/" + MAX_RETRIES);
+                        handler.postDelayed(() -> performConnect(device, listener), 2000);
+                    } else {
+                        currentState = ConnectionState.DISCONNECTED;
+                        if (listener != null) listener.onFailure(reason);
+                    }
+                }
+            });
         } catch (SecurityException e) {
             Log.e(TAG, "Missing permissions for connect", e);
             currentState = ConnectionState.DISCONNECTED;
             if (listener != null) listener.onFailure(WifiP2pManager.P2P_UNSUPPORTED);
         }
+    }
+
+    public void disconnect() {
+        if (manager != null && channel != null) {
+            manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Log.d(TAG, "Disconnected successfully");
+                    onDisconnected();
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.e(TAG, "Disconnect failed: " + reason);
+                }
+            });
+        }
+    }
+
+    public WifiP2pManager.Channel getChannel() {
+        return channel;
     }
 
     public void setConnectionListener(ConnectionListener listener) {

@@ -17,7 +17,7 @@
             app:popUpToInclusive="true" />
         <action
             android:id="@+id/action_splash_to_main"
-            app:destination="@id/nav_talk"
+            app:destination="@id/nav_devices"
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true" />
     </fragment>
@@ -29,7 +29,7 @@
         tools:layout="@layout/fragment_permissions">
         <action
             android:id="@+id/action_permissions_to_main"
-            app:destination="@id/nav_talk"
+            app:destination="@id/nav_devices"
             app:popUpTo="@id/permissionsFragment"
             app:popUpToInclusive="true" />
     </fragment>

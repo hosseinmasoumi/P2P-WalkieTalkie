@@ -45,8 +45,9 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
     }
 
     private void loadRecordings() {
-        File dir = requireActivity().getExternalFilesDir("recordings");
-        if (dir != null && dir.exists()) {
+        File musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC);
+        File dir = new File(musicDir, "P2PWalkieTalkie");
+        if (dir.exists()) {
             File[] files = dir.listFiles();
             if (files != null) {
                 List<File> fileList = Arrays.asList(files);

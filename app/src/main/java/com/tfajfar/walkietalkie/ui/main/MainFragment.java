@@ -23,7 +23,6 @@ import com.tfajfar.walkietalkie.core.AudioEngine;
 import com.tfajfar.walkietalkie.core.WifiDirectManager;
 
 import java.io.File;
-import java.util.Random;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -33,6 +32,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.TypedValue;
+import android.os.Environment;
 
 public class MainFragment extends Fragment implements WifiDirectManager.ConnectionListener {
     private AudioEngine audioEngine;
@@ -63,15 +63,15 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         
         // Sync switch with prefs
         recordSwitch.setChecked(prefs.getBoolean("record_transmissions", false));
+        updateAudioEngineRecording();
         recordSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("record_transmissions", isChecked).apply();
+            updateAudioEngineRecording();
         });
 
         pttButton.setOnTouchListener((v, event) -> {
-            if (!hasPermissions()) {
-                Toast.makeText(getContext(), "Permissions missing", Toast.LENGTH_SHORT).show();
-                return false;
-            }
+            if (!pttButton.isEnabled()) return false;
+            
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     viewModel.setIsTalking(true);
@@ -89,12 +89,32 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         view.findViewById(R.id.btn_close_snack).setOnClickListener(v -> 
             view.findViewById(R.id.snackbar_container).setVisibility(View.GONE));
         
+        view.findViewById(R.id.toolbar).setOnClickListener(v -> {
+            androidx.drawerlayout.widget.DrawerLayout drawer = requireActivity().findViewById(R.id.drawer_layout);
+            if (drawer != null) {
+                drawer.openDrawer(androidx.core.view.GravityCompat.START);
+            }
+        });
+
         view.findViewById(R.id.card_devices).setOnClickListener(v ->
             Navigation.findNavController(v).navigate(R.id.nav_devices));
+
+        view.findViewById(R.id.card_bottom_status).setOnClickListener(v -> {
+            wifiDirectManager.disconnect();
+            Toast.makeText(getContext(), "Disconnected", Toast.LENGTH_SHORT).show();
+        });
 
         setupObservers(view);
         audioEngine.startListening();
         checkPermissionsAndEnableUI();
+    }
+
+    private void updateAudioEngineRecording() {
+        if (audioEngine != null) {
+            File musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+            File dir = new File(musicDir, "P2PWalkieTalkie");
+            audioEngine.setRecordEnabled(recordSwitch.isChecked(), dir.getAbsolutePath());
+        }
     }
 
     @Override
@@ -131,7 +151,7 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         TextView tvPeersCount = view.findViewById(R.id.tv_devices_count);
         TextView tvSnackText = view.findViewById(R.id.tv_snack_text);
         android.widget.ImageView ivWifi = view.findViewById(R.id.iv_wifi_status);
-        View volumeBar = view.findViewById(R.id.volume_meter_bar);
+        View volumeIndicator = view.findViewById(R.id.volume_level_indicator);
 
         viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), status -> {
             tvStatusTitle.setText(status);
@@ -152,27 +172,33 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         viewModel.getConnectionDesc().observe(getViewLifecycleOwner(), tvStatusDesc::setText);
 
         viewModel.getConnectedPeersCount().observe(getViewLifecycleOwner(), count -> {
+            String countText = count + " " + (count == 1 ? "device connected" : "devices connected");
+            tvPeersCount.setText(countText);
             if (count > 0) {
-                tvPeersCount.setText(getString(R.string.devices_connected_count, count));
-                tvSnackText.setText(R.string.connection_established);
+                tvSnackText.setText(getString(R.string.connected_to_devices_snackbar, count));
+                view.findViewById(R.id.card_bottom_status).setVisibility(View.VISIBLE);
             } else {
-                tvPeersCount.setText(R.string.no_devices_found);
                 tvSnackText.setText(R.string.not_connected);
+                view.findViewById(R.id.card_bottom_status).setVisibility(View.GONE);
             }
         });
 
         viewModel.getAudioLevel().observe(getViewLifecycleOwner(), level -> {
-            ViewGroup.LayoutParams params = volumeBar.getLayoutParams();
-            params.height = level;
-            volumeBar.setLayoutParams(params);
+            if (volumeIndicator != null) {
+                ViewGroup.LayoutParams params = volumeIndicator.getLayoutParams();
+                params.height = level;
+                volumeIndicator.setLayoutParams(params);
+            }
         });
 
         viewModel.getIsTalking().observe(getViewLifecycleOwner(), talking -> {
             pttButton.setPressed(talking);
             if (talking) {
                 startVolumeAnimation();
+                pttButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.statusRed)));
             } else {
                 stopVolumeAnimation();
+                pttButton.setBackgroundTintList(null);
             }
         });
     }
@@ -203,9 +229,12 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
                 if (talking != null && talking) {
                     // Max height 220dp
                     float maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 220, getResources().getDisplayMetrics());
-                    int height = new Random().nextInt((int) maxPx - 50) + 50;
+                    int amp = audioEngine.getAmplitude();
+                    // Scale amplitude (max 32767) to pixels
+                    int height = (int) ((amp / 32767.0) * maxPx);
+                    if (height < 20 && amp > 0) height = 20; // Show something if there's sound
                     viewModel.setAudioLevel(height);
-                    handler.postDelayed(this, 100);
+                    handler.postDelayed(this, 50);
                 }
             }
         });
@@ -222,7 +251,7 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         if (info != null && info.groupFormed) {
             viewModel.setConnectionStatus(getString(R.string.connected));
             viewModel.setConnectionDesc(getString(info.isGroupOwner ? R.string.status_connected_owner_title : R.string.status_connected_client_title));
-            viewModel.setConnectedPeersCount(2); // Still mocked for UI demo
+            viewModel.setConnectedPeersCount(1); 
         } else {
             switch (state) {
                 case DISCOVERING:
@@ -255,13 +284,12 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         
         String recordPath = null;
         if (recordSwitch != null && recordSwitch.isChecked()) {
-            File dir = requireActivity().getExternalFilesDir("recordings");
-            if (dir != null && (dir.exists() || dir.mkdirs())) {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault());
-                String timestamp = sdf.format(new java.util.Date());
-                String fileName = timestamp + "_OUT.amr";
-                recordPath = new File(dir, fileName).getAbsolutePath();
-            }
+            File musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+            File dir = new File(musicDir, "P2PWalkieTalkie");
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault());
+            String timestamp = sdf.format(new java.util.Date());
+            String fileName = timestamp + "_OUT.amr";
+            recordPath = new File(dir, fileName).getAbsolutePath();
         }
         
         audioEngine.startTalking(targetIp, recordPath);

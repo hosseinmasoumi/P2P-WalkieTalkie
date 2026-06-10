@@ -232,32 +232,20 @@
                             android:textSize="11sp" />
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:id="@+id/volume_meter_bar"
+                    <FrameLayout
                         android:layout_width="16dp"
                         android:layout_height="220dp"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/search_card_background"
-                        android:gravity="bottom"
-                        android:orientation="vertical"
-                        android:padding="3dp">
+                        android:padding="2dp">
 
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#1AFFFFFF" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#33FFA000" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="#33FFA000" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginBottom="2dp" android:background="@color/greenAccent" />
-                        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="@color/greenAccent" />
-                    </LinearLayout>
+                        <View
+                            android:id="@+id/volume_level_indicator"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_gravity="bottom"
+                            android:background="@color/greenAccent" />
+                    </FrameLayout>
                 </LinearLayout>
 
                 <TextView
