@@ -170,20 +170,23 @@
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Control Area -->
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <!-- Control Area - Responsive Design -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="320dp">
+                android:layout_height="wrap_content"
+                android:minHeight="240dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:baselineAligned="false">
 
                 <!-- Volume Meter -->
                 <LinearLayout
                     android:id="@+id/volume_meter_container"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="0.25"
                     android:orientation="horizontal"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    android:gravity="center">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -234,7 +237,7 @@
 
                     <FrameLayout
                         android:layout_width="16dp"
-                        android:layout_height="220dp"
+                        android:layout_height="200dp"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/search_card_background"
                         android:padding="2dp">
@@ -248,29 +251,15 @@
                     </FrameLayout>
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/volume_level"
-                    android:textColor="@color/textSecondary"
-                    android:textSize="11sp"
-                    app:layout_constraintEnd_toEndOf="@id/volume_meter_container"
-                    app:layout_constraintStart_toStartOf="@id/volume_meter_container"
-                    app:layout_constraintTop_toBottomOf="@id/volume_meter_container"
-                    app:fontFamily="@font/vazir_font" />
-
-                <!-- PTT Button Section -->
+                <!-- PTT Button - Responsive -->
                 <FrameLayout
                     android:id="@+id/ptt_container"
-                    android:layout_width="220dp"
-                    android:layout_height="220dp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
                     android:background="@drawable/ptt_button_outer"
-                    android:padding="32dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    android:padding="24dp"
+                    android:aspectRatio="1">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_ptt"
@@ -286,7 +275,7 @@
                         app:icon="@drawable/ic_mic"
                         app:iconGravity="top"
                         app:iconPadding="0dp"
-                        app:iconSize="56dp"
+                        app:iconSize="48dp"
                         app:iconTint="@android:color/white"
                         app:rippleColor="#4DFFFFFF" />
 
@@ -294,81 +283,58 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom|center_horizontal"
-                        android:layout_marginBottom="20dp"
+                        android:layout_marginBottom="16dp"
                         android:text="@string/hold_to_talk"
                         android:textColor="@android:color/white"
-                        android:textSize="12sp"
+                        android:textSize="11sp"
                         android:textStyle="bold"
                         app:fontFamily="@font/vazir_font" />
                 </FrameLayout>
 
-                <!-- Small decoration dots around PTT -->
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="12dp"
-                    android:src="@drawable/divider_vertical"
-                    android:alpha="0.3"
-                    android:contentDescription="@null"
-                    app:layout_constraintBottom_toBottomOf="@id/ptt_container"
-                    app:layout_constraintEnd_toStartOf="@id/ptt_container"
-                    app:layout_constraintTop_toTopOf="@id/ptt_container" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="12dp"
-                    android:src="@drawable/divider_vertical"
-                    android:alpha="0.3"
-                    android:contentDescription="@null"
-                    app:layout_constraintBottom_toBottomOf="@id/ptt_container"
-                    app:layout_constraintStart_toEndOf="@id/ptt_container"
-                    app:layout_constraintTop_toTopOf="@id/ptt_container" />
-
                 <!-- Record Transmissions Toggle Card -->
                 <com.google.android.material.card.MaterialCardView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.25"
+                    android:layout_marginStart="8dp"
                     app:cardBackgroundColor="@color/cardBackground"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#1AFFFFFF"
-                    app:strokeWidth="1dp"
-                    app:layout_constraintBottom_toBottomOf="@id/ptt_container"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/ptt_container">
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="109dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:padding="8dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:maxWidth="80dp"
                             android:text="@string/record_transmissions_en"
                             android:textColor="@color/textSecondary"
-                            android:textSize="10sp"
+                            android:textSize="9sp"
                             app:fontFamily="@font/vazir_font" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/recordTransmissionsSwitch"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="6dp"
                             android:checked="false"
+                            android:scaleX="0.8"
+                            android:scaleY="0.8"
                             app:thumbTint="@android:color/white"
                             app:trackTint="@color/greenAccent" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
 
-            <!-- Bottom Connection Status Card (as seen in image) -->
+            <!-- Bottom Connection Status Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_bottom_status"
                 android:layout_width="match_parent"
