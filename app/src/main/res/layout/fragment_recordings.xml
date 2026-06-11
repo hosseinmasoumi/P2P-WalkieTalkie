@@ -61,4 +61,17 @@
         app:layout_constraintTop_toBottomOf="@id/card_storage"
         tools:listitem="@layout/item_recording" />
 
+    <TextView
+        android:id="@+id/tv_empty_recordings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_recordings_yet"
+        android:textColor="@color/textSecondary"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/card_storage" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

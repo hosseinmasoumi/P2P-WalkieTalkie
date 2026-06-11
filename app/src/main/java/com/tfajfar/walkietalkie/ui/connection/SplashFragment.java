@@ -3,6 +3,7 @@ package com.tfajfar.walkietalkie.ui.connection;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,7 +31,7 @@ public class SplashFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        new Handler().postDelayed(() -> {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (isAdded()) {
                 if (getActivity() instanceof SplashCallback) {
                     ((SplashCallback) getActivity()).onSplashFinished();

@@ -114,10 +114,19 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
     private void navigateToMainDelayed() {
         if (isNavigating) return;
         isNavigating = true;
-        
+
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (isAdded() && getView() != null) {
-                Navigation.findNavController(getView()).navigate(R.id.nav_talk);
+            if (!isAdded() || getView() == null) return;
+            try {
+                androidx.navigation.NavController nav =
+                        Navigation.findNavController(getView());
+                // Only navigate if we are currently on this fragment (not already navigated away)
+                if (nav.getCurrentDestination() != null
+                        && nav.getCurrentDestination().getId() == R.id.connectionStatusFragment) {
+                    nav.navigate(R.id.nav_talk);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("ConnectionStatusFrag", "Navigation failed", e);
             }
         }, 1500);
     }
@@ -168,7 +177,8 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
     @Override
     public void onResume() {
         super.onResume();
-        wifiDirectManager.setConnectionListener(this);
+        isNavigating = false;
+        wifiDirectManager.addConnectionListener(this);
         wifiDirectManager.registerReceiver();
         updateUI();
     }
@@ -176,6 +186,7 @@ public class ConnectionStatusFragment extends Fragment implements WifiDirectMana
     @Override
     public void onPause() {
         super.onPause();
+        wifiDirectManager.removeConnectionListener(this);
         wifiDirectManager.unregisterReceiver();
     }
 }

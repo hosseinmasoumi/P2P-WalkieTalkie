@@ -106,4 +106,6 @@
     <string name="db_24">-24</string>
     <string name="db_36">-36</string>
     <string name="cd_mic_icon">Microphone Icon</string>
+    <string name="connection_failed_reason">Connection failed: %1$d</string>
+    <string name="no_recordings_yet">No recordings yet</string>
 </resources>

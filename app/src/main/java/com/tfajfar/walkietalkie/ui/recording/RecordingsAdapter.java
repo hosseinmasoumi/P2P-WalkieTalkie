@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.tfajfar.walkietalkie.R;
@@ -32,8 +33,30 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
     }
 
     public void updateRecordings(List<File> newRecordings) {
-        this.recordings = newRecordings;
-        notifyDataSetChanged();
+        final List<File> oldList = this.recordings;
+        final List<File> newList = new ArrayList<>(newRecordings);
+
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldList.size(); }
+            @Override public int getNewListSize() { return newList.size(); }
+
+            @Override
+            public boolean areItemsTheSame(int oldPos, int newPos) {
+                return oldList.get(oldPos).getAbsolutePath()
+                        .equals(newList.get(newPos).getAbsolutePath());
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldPos, int newPos) {
+                File o = oldList.get(oldPos);
+                File n = newList.get(newPos);
+                return o.lastModified() == n.lastModified()
+                        && o.length() == n.length();
+            }
+        });
+
+        this.recordings = newList;
+        result.dispatchUpdatesTo(this);
     }
 
     @NonNull

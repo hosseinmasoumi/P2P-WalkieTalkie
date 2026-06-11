@@ -240,11 +240,14 @@
                 android:orientation="horizontal">
 
                 <ImageView
+                    android:id="@+id/btn_rewind_10"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:background="@drawable/circle_background_small"
                     android:padding="12dp"
                     android:src="@drawable/ic_replay_10"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:tint="@color/greenAccent"
                     android:contentDescription="@null" />
 
@@ -267,11 +270,14 @@
                 </FrameLayout>
 
                 <ImageView
+                    android:id="@+id/btn_forward_10"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:background="@drawable/circle_background_small"
                     android:padding="12dp"
                     android:src="@drawable/ic_forward_10"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:tint="@color/greenAccent"
                     android:contentDescription="@null" />
             </LinearLayout>

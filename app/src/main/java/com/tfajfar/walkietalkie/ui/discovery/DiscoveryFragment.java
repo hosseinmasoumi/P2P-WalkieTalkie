@@ -28,17 +28,39 @@ import com.tfajfar.walkietalkie.core.WifiDirectManager;
 
 import java.util.ArrayList;
 
-public class DiscoveryFragment extends Fragment implements DeviceAdapter.OnDeviceClickListener, WifiDirectManager.ConnectionListener {
+public class DiscoveryFragment extends Fragment
+        implements DeviceAdapter.OnDeviceClickListener, WifiDirectManager.ConnectionListener {
 
     private static final String TAG = "DiscoveryFragment";
     private WifiDirectManager wifiDirectManager;
     private DeviceAdapter adapter;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private Runnable discoveryRunnable;
+    // volatile flag: set false in onPause so the runnable stops rescheduling itself
+    private volatile boolean discoveryActive = false;
+    private final Runnable discoveryRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!isAdded() || !discoveryActive) return;
+            WifiDirectManager.ConnectionState state = wifiDirectManager.getCurrentState();
+            Log.d(TAG, "Discovery pulse, state=" + state);
+            if (state == WifiDirectManager.ConnectionState.DISCONNECTED
+                    || state == WifiDirectManager.ConnectionState.DISCOVERING) {
+                wifiDirectManager.discoverPeers(peers -> {
+                    if (isAdded() && discoveryActive) {
+                        adapter.updateDevices(peers);
+                        updateSearchingUI(!peers.isEmpty());
+                    }
+                });
+            }
+            // Only reschedule if still active
+            if (discoveryActive) handler.postDelayed(this, 10_000);
+        }
+    };
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         wifiDirectManager = WifiDirectManager.getInstance(requireContext());
         return inflater.inflate(R.layout.fragment_discovery, container, false);
     }
@@ -46,96 +68,81 @@ public class DiscoveryFragment extends Fragment implements DeviceAdapter.OnDevic
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
-        setupRecyclerView(view);
-
+        RecyclerView rv = view.findViewById(R.id.rv_devices);
+        adapter = new DeviceAdapter(this);
+        rv.setLayoutManager(new LinearLayoutManager(getContext()));
+        rv.setAdapter(adapter);
         view.findViewById(R.id.btn_rescan).setOnClickListener(v -> {
-            if (checkWifiAndLocation()) {
-                startDiscovery();
-            }
+            if (checkWifiAndLocation()) startDiscovery();
         });
+    }
 
-        discoveryRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!isAdded()) return;
+    @Override
+    public void onResume() {
+        super.onResume();
+        wifiDirectManager.addConnectionListener(this);
+        wifiDirectManager.registerReceiver();
+        if (checkWifiAndLocation()) startDiscovery();
+    }
 
-                WifiDirectManager.ConnectionState state = wifiDirectManager.getCurrentState();
-                Log.d(TAG, "Discovery runnable pulse. Current state: " + state);
-                
-                // Maintain discovery if we're not currently in the process of connecting or connected
-                if (state == WifiDirectManager.ConnectionState.DISCONNECTED || state == WifiDirectManager.ConnectionState.DISCOVERING) {
-                    wifiDirectManager.discoverPeers(peers -> {
-                        if (isAdded()) {
-                            adapter.updateDevices(peers);
-                            updateSearchingUI(!peers.isEmpty());
-                        }
-                    });
-                }
-                
-                // Reschedule to keep device discoverable (Listen Mode expires over time)
-                handler.postDelayed(this, 10000);
-            }
-        };
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Stop the loop BEFORE removing callbacks so the check in the runnable sees false
+        discoveryActive = false;
+        handler.removeCallbacks(discoveryRunnable);
+        wifiDirectManager.removeConnectionListener(this);
+        wifiDirectManager.unregisterReceiver();
+    }
+
+    private void startDiscovery() {
+        if (!isAdded()) return;
+        adapter.updateDevices(new ArrayList<>());
+        updateSearchingUI(false);
+        discoveryActive = true;
+        handler.removeCallbacks(discoveryRunnable);
+        handler.post(discoveryRunnable);
+    }
+
+    private void stopDiscovery() {
+        discoveryActive = false;
+        handler.removeCallbacks(discoveryRunnable);
     }
 
     private boolean checkWifiAndLocation() {
         if (!wifiDirectManager.isWifiEnabled()) {
-            showError("Wi-Fi is disabled", "Enable", v -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)));
+            showError("Wi-Fi is disabled", "Enable",
+                    v -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)));
             return false;
         }
         if (!wifiDirectManager.isLocationEnabled()) {
-            showError("Location is disabled", "Enable", v -> startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)));
+            showError("Location is disabled", "Enable",
+                    v -> startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)));
             return false;
         }
         if (!wifiDirectManager.hasPermissions()) {
             showError("Nearby permissions missing", "Settings", v -> {
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(android.net.Uri.fromParts("package", requireContext().getPackageName(), null));
-                startActivity(intent);
+                Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                i.setData(android.net.Uri.fromParts("package",
+                        requireContext().getPackageName(), null));
+                startActivity(i);
             });
             return false;
         }
         return true;
     }
 
-    private void showError(String message, String actionText, View.OnClickListener listener) {
-        if (getView() != null) {
-            Snackbar.make(getView(), message, Snackbar.LENGTH_LONG)
-                    .setAction(actionText, listener)
-                    .show();
-        }
-    }
-
-    private void setupRecyclerView(View view) {
-        RecyclerView rv = view.findViewById(R.id.rv_devices);
-        adapter = new DeviceAdapter(this);
-        rv.setLayoutManager(new LinearLayoutManager(getContext()));
-        rv.setAdapter(adapter);
-    }
-
-    private void startDiscovery() {
-        if (!isAdded()) return;
-        
-        // Clear list and show searching state
-        adapter.updateDevices(new ArrayList<>());
-        updateSearchingUI(false);
-        
-        handler.removeCallbacks(discoveryRunnable);
-        handler.post(discoveryRunnable);
+    private void showError(String msg, String action, View.OnClickListener l) {
+        if (getView() != null)
+            Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG).setAction(action, l).show();
     }
 
     private void updateSearchingUI(boolean devicesFound) {
         if (getView() == null) return;
-        
         TextView tvTitle = getView().findViewById(R.id.tv_searching_title);
         TextView tvDesc = getView().findViewById(R.id.tv_searching_desc);
-        View progress = getView().findViewById(R.id.progress_indicator);
         View emptyState = getView().findViewById(R.id.tv_empty_state);
-        
-        // Progress indicator should stay visible while we are in discovery mode
-        progress.setVisibility(View.VISIBLE);
-
+        getView().findViewById(R.id.progress_indicator).setVisibility(View.VISIBLE);
         if (devicesFound) {
             tvTitle.setText(R.string.found_devices);
             tvDesc.setText(getString(R.string.devices_found_count, adapter.getItemCount()));
@@ -143,106 +150,77 @@ public class DiscoveryFragment extends Fragment implements DeviceAdapter.OnDevic
         } else {
             tvTitle.setText(R.string.searching);
             tvDesc.setText(R.string.searching_desc);
-            // Only show empty state if we actually have 0 devices in the adapter
-            if (adapter.getItemCount() == 0) {
-                emptyState.setVisibility(View.VISIBLE);
-            } else {
-                emptyState.setVisibility(View.GONE);
-            }
+            emptyState.setVisibility(adapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
         }
     }
+
+    // ── DeviceAdapter.OnDeviceClickListener ───────────────────────────────────
 
     @Override
     public void onDeviceClick(WifiP2pDevice device) {
         Toast.makeText(getContext(), "Connecting to " + device.deviceName, Toast.LENGTH_SHORT).show();
-        
-        // Stop the discovery loop while attempting to connect
-        handler.removeCallbacks(discoveryRunnable);
-        
+        stopDiscovery();
         wifiDirectManager.connect(device, new WifiP2pManager.ActionListener() {
             @Override
-            public void onSuccess() {
-                Log.d(TAG, "Connection initiation successful");
-            }
-
+            public void onSuccess() { Log.d(TAG, "Connection initiated"); }
             @Override
             public void onFailure(int reason) {
                 if (isAdded()) {
-                    Toast.makeText(getContext(), "Connection failed after retries: " + reason, Toast.LENGTH_SHORT).show();
-                    // Resume discovery since connection failed
+                    Toast.makeText(getContext(),
+                            "Connection failed: " + reason, Toast.LENGTH_SHORT).show();
                     startDiscovery();
                 }
             }
         });
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        wifiDirectManager.setConnectionListener(this);
-        wifiDirectManager.registerReceiver();
-        if (checkWifiAndLocation()) {
-            startDiscovery();
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        handler.removeCallbacks(discoveryRunnable);
-        wifiDirectManager.unregisterReceiver();
-    }
+    // ── ConnectionListener ────────────────────────────────────────────────────
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
-        if (info.groupFormed && isAdded()) {
-            Log.d(TAG, "Connected! Group formed. Navigating to talk screen.");
-            // Determine if we should navigate based on current destination to avoid double navigation
-            try {
-                Navigation.findNavController(requireView()).navigate(R.id.nav_talk);
-            } catch (Exception e) {
-                Log.e(TAG, "Navigation failed", e);
+        if (!info.groupFormed || !isAdded()) return;
+        Log.d(TAG, "Group formed, navigating to Talk");
+        try {
+            androidx.navigation.NavController nav = Navigation.findNavController(requireView());
+            if (nav.getCurrentDestination() != null
+                    && nav.getCurrentDestination().getId() == R.id.nav_devices) {
+                nav.navigate(R.id.nav_talk);
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Navigation failed", e);
         }
     }
 
     @Override
     public void onDisconnected() {
-        if (isAdded()) {
-            Toast.makeText(getContext(), "Disconnected", Toast.LENGTH_SHORT).show();
-            adapter.updateDevices(new ArrayList<>());
+        if (!isAdded()) return;
+        Toast.makeText(getContext(), "Disconnected", Toast.LENGTH_SHORT).show();
+        adapter.updateDevices(new ArrayList<>());
+        startDiscovery();
+    }
+
+    @Override
+    public void onWifiP2pEnabled(boolean enabled) {
+        if (!isAdded()) return;
+        if (!enabled) {
+            Toast.makeText(getContext(), "Wi-Fi Direct is disabled", Toast.LENGTH_SHORT).show();
+            updateSearchingUI(false);
+        } else {
             startDiscovery();
         }
     }
 
     @Override
-    public void onWifiP2pEnabled(boolean enabled) {
-        if (isAdded()) {
-            if (!enabled) {
-                Toast.makeText(getContext(), "Wi-Fi Direct is disabled", Toast.LENGTH_SHORT).show();
-                updateSearchingUI(false);
-            } else {
-                startDiscovery();
-            }
-        }
-    }
-
-    @Override
     public void onConnectionRetrying(int attempt, int max) {
-        if (isAdded() && getView() != null) {
-            String message = getString(R.string.retry_attempt, attempt, max);
-            Snackbar.make(getView(), message + ". Retrying in 2 seconds...", Snackbar.LENGTH_SHORT).show();
-            
-            TextView tvDesc = getView().findViewById(R.id.tv_searching_desc);
-            if (tvDesc != null) {
-                tvDesc.setText(message);
-            }
-        }
+        if (!isAdded() || getView() == null) return;
+        String msg = getString(R.string.retry_attempt, attempt, max);
+        Snackbar.make(getView(), msg + ". Retrying in 2 seconds...", Snackbar.LENGTH_SHORT).show();
+        TextView tvDesc = getView().findViewById(R.id.tv_searching_desc);
+        if (tvDesc != null) tvDesc.setText(msg);
     }
 
     @Override
     public void onConnectionFailed(int reason) {
-        // Log final failure. UI is handled in onDeviceClick's onFailure or here if needed.
         Log.e(TAG, "Final connection failure: " + reason);
     }
 }

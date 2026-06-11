@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.tfajfar.walkietalkie.R;
@@ -14,11 +16,9 @@ import com.tfajfar.walkietalkie.R;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.core.content.ContextCompat;
-
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
-    private final List<WifiP2pDevice> devices = new ArrayList<>();
+    private List<WifiP2pDevice> devices = new ArrayList<>();
     private final OnDeviceClickListener listener;
 
     public interface OnDeviceClickListener {
@@ -30,24 +30,54 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     }
 
     public void updateDevices(List<WifiP2pDevice> newDevices) {
-        devices.clear();
-        devices.addAll(newDevices);
-        notifyDataSetChanged();
+        final List<WifiP2pDevice> oldList = this.devices;
+        final List<WifiP2pDevice> newList = new ArrayList<>(newDevices);
+
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldList.size(); }
+            @Override public int getNewListSize() { return newList.size(); }
+
+            @Override
+            public boolean areItemsTheSame(int oldPos, int newPos) {
+                return oldList.get(oldPos).deviceAddress
+                        .equals(newList.get(newPos).deviceAddress);
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldPos, int newPos) {
+                WifiP2pDevice o = oldList.get(oldPos);
+                WifiP2pDevice n = newList.get(newPos);
+                return o.status == n.status
+                        && strEqual(o.deviceName, n.deviceName);
+            }
+
+            private boolean strEqual(String a, String b) {
+                if (a == null && b == null) return true;
+                if (a == null || b == null) return false;
+                return a.equals(b);
+            }
+        });
+
+        this.devices = newList;
+        result.dispatchUpdatesTo(this);
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_device, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_device, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WifiP2pDevice device = devices.get(position);
-        holder.tvName.setText(device.deviceName != null && !device.deviceName.isEmpty() ? device.deviceName : device.deviceAddress);
+        String name = (device.deviceName != null && !device.deviceName.isEmpty())
+                ? device.deviceName : device.deviceAddress;
+        holder.tvName.setText(name);
         holder.tvStatus.setText(getDeviceStatus(device.status));
-        
+
         int dotColor;
         switch (device.status) {
             case WifiP2pDevice.AVAILABLE:
@@ -63,9 +93,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
                 dotColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.dotGrey);
                 break;
         }
-        holder.itemView.findViewById(R.id.view_status_dot).getBackground().setTint(dotColor);
+        holder.itemView.findViewById(R.id.view_status_dot)
+                .getBackground().setTint(dotColor);
 
-        holder.itemView.findViewById(R.id.btn_connect).setOnClickListener(v -> listener.onDeviceClick(device));
+        holder.itemView.findViewById(R.id.btn_connect)
+                .setOnClickListener(v -> listener.onDeviceClick(device));
     }
 
     @Override
@@ -75,12 +107,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     private String getDeviceStatus(int status) {
         switch (status) {
-            case WifiP2pDevice.AVAILABLE: return "Available";
-            case WifiP2pDevice.INVITED: return "Invited";
-            case WifiP2pDevice.CONNECTED: return "Connected";
-            case WifiP2pDevice.FAILED: return "Failed";
+            case WifiP2pDevice.AVAILABLE:   return "Available";
+            case WifiP2pDevice.INVITED:     return "Invited";
+            case WifiP2pDevice.CONNECTED:   return "Connected";
+            case WifiP2pDevice.FAILED:      return "Failed";
             case WifiP2pDevice.UNAVAILABLE: return "Unavailable";
-            default: return "Unknown";
+            default:                        return "Unknown";
         }
     }
 
