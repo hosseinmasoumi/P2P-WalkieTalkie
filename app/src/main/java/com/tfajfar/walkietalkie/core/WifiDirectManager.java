@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WifiDirectManager {
     private static final String TAG = "WifiDirectManager";
@@ -30,9 +29,7 @@ public class WifiDirectManager {
     private BroadcastReceiver receiver;
 
     private PeerListListener peerListListener;
-    // CopyOnWriteArrayList allows multiple fragments to receive callbacks
-    private final CopyOnWriteArrayList<ConnectionListener> connectionListeners =
-            new CopyOnWriteArrayList<>();
+    private final List<ConnectionListener> connectionListeners = new ArrayList<ConnectionListener>();
 
     public interface PeerListListener {
         void onPeersAvailable(List<WifiP2pDevice> peers);
@@ -50,18 +47,14 @@ public class WifiDirectManager {
         DISCONNECTED, DISCOVERING, CONNECTING, CONNECTED_OWNER, CONNECTED_CLIENT
     }
 
-    private static volatile WifiDirectManager instance;
+    private static WifiDirectManager instance;
     private WifiP2pInfo connectionInfo;
     private ConnectionState currentState = ConnectionState.DISCONNECTED;
     private int receiverRefCount = 0;
 
-    public static WifiDirectManager getInstance(Context context) {
+    public static synchronized WifiDirectManager getInstance(Context context) {
         if (instance == null) {
-            synchronized (WifiDirectManager.class) {
-                if (instance == null) {
-                    instance = new WifiDirectManager(context.getApplicationContext());
-                }
-            }
+            instance = new WifiDirectManager(context.getApplicationContext());
         }
         return instance;
     }
@@ -69,7 +62,12 @@ public class WifiDirectManager {
     private WifiDirectManager(Context context) {
         this.context = context;
         manager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
-        channel = manager.initialize(context, Looper.getMainLooper(), null);
+        channel = manager.initialize(context, Looper.getMainLooper(), new WifiP2pManager.ChannelListener() {
+            @Override
+            public void onChannelDisconnected() {
+                Log.e(TAG, "Channel disconnected");
+            }
+        });
     }
 
     public synchronized void registerReceiver() {
@@ -100,8 +98,7 @@ public class WifiDirectManager {
     public ConnectionState getCurrentState() { return currentState; }
 
     public boolean isWifiEnabled() {
-        WifiManager wm = (WifiManager) context.getApplicationContext()
-                .getSystemService(Context.WIFI_SERVICE);
+        WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         return wm != null && wm.isWifiEnabled();
     }
 
@@ -121,26 +118,17 @@ public class WifiDirectManager {
         return true;
     }
 
-    // ── Listener management ───────────────────────────────────────────────────
-
-    /** Register a listener. Safe to call multiple times from different fragments. */
-    public void addConnectionListener(ConnectionListener listener) {
+    public synchronized void addConnectionListener(ConnectionListener listener) {
         if (listener != null && !connectionListeners.contains(listener))
             connectionListeners.add(listener);
     }
 
-    /** Remove when the fragment pauses / destroys. */
-    public void removeConnectionListener(ConnectionListener listener) {
+    public synchronized void removeConnectionListener(ConnectionListener listener) {
         connectionListeners.remove(listener);
     }
 
-    /**
-     * Legacy single-listener setter kept for compatibility.
-     * Replaces ALL previously registered listeners with this one.
-     */
     public void setConnectionListener(ConnectionListener listener) {
-        connectionListeners.clear();
-        if (listener != null) connectionListeners.add(listener);
+        addConnectionListener(listener);
     }
 
     // ── Discovery ─────────────────────────────────────────────────────────────
@@ -148,7 +136,7 @@ public class WifiDirectManager {
     public void discoverPeers(PeerListListener listener) {
         this.peerListListener = listener;
         if (!isWifiEnabled() || !isLocationEnabled() || !hasPermissions()) {
-            Log.e(TAG, "Cannot start discovery: preconditions not met");
+            Log.e(TAG, "Cannot start discovery");
             return;
         }
         currentState = ConnectionState.DISCOVERING;
@@ -163,18 +151,15 @@ public class WifiDirectManager {
             manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    Log.d(TAG, "Discovery started");
                     currentState = ConnectionState.DISCOVERING;
                 }
                 @Override
                 public void onFailure(int reason) {
-                    Log.e(TAG, "Discovery failed: " + reason);
                     currentState = (reason == WifiP2pManager.BUSY)
                             ? ConnectionState.DISCOVERING : ConnectionState.DISCONNECTED;
                 }
             });
         } catch (SecurityException e) {
-            Log.e(TAG, "Missing permissions for discoverPeers", e);
             currentState = ConnectionState.DISCONNECTED;
         }
     }
@@ -190,7 +175,7 @@ public class WifiDirectManager {
         performConnect(device, listener);
     }
 
-    private void performConnect(WifiP2pDevice device, WifiP2pManager.ActionListener listener) {
+    private void performConnect(final WifiP2pDevice device, final WifiP2pManager.ActionListener listener) {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         currentState = ConnectionState.CONNECTING;
@@ -201,23 +186,30 @@ public class WifiDirectManager {
                     if (listener != null) listener.onSuccess();
                 }
                 @Override
-                public void onFailure(int reason) {
+                public void onFailure(final int reason) {
                     if (retryCount < MAX_RETRIES) {
                         retryCount++;
-                        Log.d(TAG, "Retrying connect " + retryCount + "/" + MAX_RETRIES);
-                        for (ConnectionListener cl : connectionListeners)
-                            cl.onConnectionRetrying(retryCount, MAX_RETRIES);
-                        handler.postDelayed(() -> performConnect(device, listener), 2000);
+                        synchronized (WifiDirectManager.this) {
+                            for (ConnectionListener cl : connectionListeners)
+                                cl.onConnectionRetrying(retryCount, MAX_RETRIES);
+                        }
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                performConnect(device, listener);
+                            }
+                        }, 2000);
                     } else {
                         currentState = ConnectionState.DISCONNECTED;
-                        for (ConnectionListener cl : connectionListeners)
-                            cl.onConnectionFailed(reason);
+                        synchronized (WifiDirectManager.this) {
+                            for (ConnectionListener cl : connectionListeners)
+                                cl.onConnectionFailed(reason);
+                        }
                         if (listener != null) listener.onFailure(reason);
                     }
                 }
             });
         } catch (SecurityException e) {
-            Log.e(TAG, "Missing permissions for connect", e);
             currentState = ConnectionState.DISCONNECTED;
             if (listener != null) listener.onFailure(WifiP2pManager.P2P_UNSUPPORTED);
         }
@@ -226,31 +218,39 @@ public class WifiDirectManager {
     public void disconnect() {
         if (manager == null || channel == null) return;
         manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
-            @Override public void onSuccess() { Log.d(TAG, "Disconnected"); onDisconnected(); }
-            @Override public void onFailure(int r) { Log.e(TAG, "Disconnect failed: " + r); }
+            @Override public void onSuccess() { onDisconnected(); }
+            @Override public void onFailure(int r) { }
         });
     }
 
     // ── Called by BroadcastReceiver ───────────────────────────────────────────
 
     protected WifiP2pManager.PeerListListener getPeerListListener() {
-        return list -> {
-            if (peerListListener != null)
-                peerListListener.onPeersAvailable(new ArrayList<>(list.getDeviceList()));
+        return new WifiP2pManager.PeerListListener() {
+            @Override
+            public void onPeersAvailable(android.net.wifi.p2p.WifiP2pDeviceList list) {
+                if (peerListListener != null)
+                    peerListListener.onPeersAvailable(new ArrayList<WifiP2pDevice>(list.getDeviceList()));
+            }
         };
     }
 
     protected WifiP2pManager.ConnectionInfoListener getConnectionInfoListener() {
-        return info -> {
-            connectionInfo = info;
-            if (info.groupFormed) {
-                currentState = info.isGroupOwner
-                        ? ConnectionState.CONNECTED_OWNER : ConnectionState.CONNECTED_CLIENT;
-            } else {
-                currentState = ConnectionState.DISCONNECTED;
+        return new WifiP2pManager.ConnectionInfoListener() {
+            @Override
+            public void onConnectionInfoAvailable(WifiP2pInfo info) {
+                connectionInfo = info;
+                if (info.groupFormed) {
+                    currentState = info.isGroupOwner
+                            ? ConnectionState.CONNECTED_OWNER : ConnectionState.CONNECTED_CLIENT;
+                } else {
+                    currentState = ConnectionState.DISCONNECTED;
+                }
+                synchronized (WifiDirectManager.this) {
+                    for (ConnectionListener cl : connectionListeners)
+                        cl.onConnectionInfoAvailable(info);
+                }
             }
-            for (ConnectionListener cl : connectionListeners)
-                cl.onConnectionInfoAvailable(info);
         };
     }
 
@@ -259,10 +259,14 @@ public class WifiDirectManager {
     protected void onDisconnected() {
         currentState = ConnectionState.DISCONNECTED;
         connectionInfo = null;
-        for (ConnectionListener cl : connectionListeners) cl.onDisconnected();
+        synchronized (this) {
+            for (ConnectionListener cl : connectionListeners) cl.onDisconnected();
+        }
     }
 
     protected void setWifiP2pEnabled(boolean enabled) {
-        for (ConnectionListener cl : connectionListeners) cl.onWifiP2pEnabled(enabled);
+        synchronized (this) {
+            for (ConnectionListener cl : connectionListeners) cl.onWifiP2pEnabled(enabled);
+        }
     }
 }

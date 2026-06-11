@@ -108,4 +108,37 @@
     <string name="cd_mic_icon">Microphone Icon</string>
     <string name="connection_failed_reason">Connection failed: %1$d</string>
     <string name="no_recordings_yet">No recordings yet</string>
+    <string name="btn_record_voice">Record Voice</string>
+    <string name="btn_stop">Stop</string>
+    <string name="status_on">ON</string>
+    <string name="status_off">OFF</string>
+
+    <!-- New extracted strings -->
+    <string name="system_standby">System Standby</string>
+    <string name="waiting_network">Waiting for network initialization...</string>
+    <string name="engage_system">ENGAGE SYSTEM</string>
+    <string name="label_level">LEVEL</string>
+    <string name="label_nodes">NODES</string>
+    <string name="label_scan">SCAN</string>
+    <string name="label_record">RECORD</string>
+    <string name="btn_acknowledge">ACKNOWLEDGE</string>
+
+    <string name="wifi_disabled">Wi-Fi is disabled</string>
+    <string name="location_disabled">Location is disabled</string>
+    <string name="nearby_permissions_missing">Nearby permissions missing</string>
+    <string name="connecting_to">Connecting to %1$s</string>
+    <string name="connection_initiated">Connection initiated</string>
+    <string name="connection_failed">Connection failed: %1$d</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="all_permissions_required">All permissions are required for the app to function</string>
+
+    <string name="no_file_specified">No file specified</string>
+    <string name="file_not_found">File not found</string>
+    <string name="error_loading_audio">Error loading audio</string>
+    <string name="share_recording">Share Recording</string>
+    <string name="incoming">Incoming</string>
+    <string name="outgoing">Outgoing</string>
+    <string name="recording_started">Recording started</string>
+    <string name="recording_failed">Recording failed</string>
+    <string name="recording_saved">Recording saved</string>
 </resources>

@@ -124,7 +124,7 @@ public class PermissionsFragment extends Fragment {
         if (allGranted) {
             navigateToMain();
         } else {
-            Toast.makeText(getContext(), "All permissions are required for the app to function", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), R.string.all_permissions_required, Toast.LENGTH_LONG).show();
         }
     }
 

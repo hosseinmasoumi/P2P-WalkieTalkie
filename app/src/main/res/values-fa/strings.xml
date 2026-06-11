@@ -97,4 +97,38 @@
     <string name="db_24">-۲۴</string>
     <string name="db_36">-۳۶</string>
     <string name="cd_mic_icon">آیکون میکروفون</string>
+    <string name="btn_record_voice">ثبت صوت</string>
+    <string name="btn_stop">توقف</string>
+    <string name="status_on">روشن</string>
+    <string name="status_off">خاموش</string>
+    <string name="no_recordings_yet">هنوز موردی ضبط نشده است</string>
+
+    <!-- New extracted strings -->
+    <string name="system_standby">آماده‌باش سیستم</string>
+    <string name="waiting_network">در انتظار راه‌اندازی شبکه...</string>
+    <string name="engage_system">ورود به سیستم</string>
+    <string name="label_level">سطح</string>
+    <string name="label_nodes">گره‌ها</string>
+    <string name="label_scan">جستجو</string>
+    <string name="label_record">ضبط</string>
+    <string name="btn_acknowledge">تایید</string>
+
+    <string name="wifi_disabled">وای‌فای غیرفعال است</string>
+    <string name="location_disabled">مکان‌نما غیرفعال است</string>
+    <string name="nearby_permissions_missing">دسترسی‌های لازم یافت نشد</string>
+    <string name="connecting_to">در حال اتصال به %1$s</string>
+    <string name="connection_initiated">اتصال آغاز شد</string>
+    <string name="connection_failed">اتصال ناموفق بود: %1$d</string>
+    <string name="disconnected">قطع شد</string>
+    <string name="all_permissions_required">همه دسترسی‌ها برای کارکرد برنامه الزامی است</string>
+
+    <string name="no_file_specified">فایلی مشخص نشده است</string>
+    <string name="file_not_found">فایل یافت نشد</string>
+    <string name="error_loading_audio">خطا در بارگذاری صوتی</string>
+    <string name="share_recording">اشتراک‌گذاری ضبط</string>
+    <string name="incoming">ورودی</string>
+    <string name="outgoing">خروجی</string>
+    <string name="recording_started">ضبط آغاز شد</string>
+    <string name="recording_failed">ضبط ناموفق بود</string>
+    <string name="recording_saved">ضبط ذخیره شد</string>
 </resources>

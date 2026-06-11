@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
@@ -43,6 +45,7 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
     private MainViewModel viewModel;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private SwitchMaterial recordSwitch;
+    private TextView tvRecordStatus;
     private View pttButton;
     private SharedPreferences prefs;
 
@@ -62,40 +65,74 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         super.onViewCreated(view, savedInstanceState);
         pttButton = view.findViewById(R.id.btn_ptt);
         recordSwitch = view.findViewById(R.id.recordTransmissionsSwitch);
+        tvRecordStatus = view.findViewById(R.id.tv_record_status);
         view.findViewById(R.id.snackbar_container).setVisibility(View.GONE);
-        recordSwitch.setChecked(prefs.getBoolean("record_transmissions", false));
-        recordSwitch.setOnCheckedChangeListener((btn, checked) -> {
-            prefs.edit().putBoolean("record_transmissions", checked).apply();
-            updateAudioEngineRecording();
-        });
-        pttButton.setOnTouchListener((v, event) -> {
-            if(!pttButton.isEnabled())return false;
-            switch(event.getAction()){
-                case MotionEvent.ACTION_DOWN:
-                    v.setPressed(true);
-                    viewModel.setIsTalking(true);
-                    startTalking();
-                    return true;
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    v.setPressed(false);
-                    viewModel.setIsTalking(false);
-                    if(audioEngine!=null)audioEngine.stopTalking();
-                    return true;
+        
+        boolean isRecordOn = prefs.getBoolean("record_transmissions", false);
+        recordSwitch.setChecked(isRecordOn);
+        updateRecordStatusText(isRecordOn);
+        
+        recordSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                prefs.edit().putBoolean("record_transmissions", isChecked).apply();
+                updateRecordStatusText(isChecked);
+                updateAudioEngineRecording();
             }
-            return false;
         });
-        view.findViewById(R.id.btn_close_snack).setOnClickListener(
-                v -> view.findViewById(R.id.snackbar_container).setVisibility(View.GONE));
-        view.findViewById(R.id.toolbar).setOnClickListener(v -> {
-            androidx.drawerlayout.widget.DrawerLayout drawer =
-                    requireActivity().findViewById(R.id.drawer_layout);
-            if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
+
+        pttButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if(!pttButton.isEnabled())return false;
+                switch(event.getAction()){
+                    case MotionEvent.ACTION_DOWN:
+                        v.setPressed(true);
+                        viewModel.setIsTalking(true);
+                        startTalking();
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        v.setPressed(false);
+                        viewModel.setIsTalking(false);
+                        if(audioEngine!=null)audioEngine.stopTalking();
+                        return true;
+                }
+                return false;
+            }
         });
-        view.findViewById(R.id.card_devices).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.nav_devices));
-        view.findViewById(R.id.card_bottom_status).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.action_main_to_status));
+
+        view.findViewById(R.id.btn_close_snack).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                View snack = getView().findViewById(R.id.snackbar_container);
+                if (snack != null) snack.setVisibility(View.GONE);
+            }
+        });
+
+        view.findViewById(R.id.toolbar).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                androidx.drawerlayout.widget.DrawerLayout drawer =
+                        requireActivity().findViewById(R.id.drawer_layout);
+                if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
+            }
+        });
+
+        view.findViewById(R.id.card_devices).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Navigation.findNavController(v).navigate(R.id.nav_devices);
+            }
+        });
+
+        view.findViewById(R.id.card_bottom_status).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Navigation.findNavController(v).navigate(R.id.action_main_to_status);
+            }
+        });
+
         setupObservers(view);
     }
 
@@ -104,12 +141,11 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         super.onResume();
         wifiDirectManager.addConnectionListener(this);
         wifiDirectManager.registerReceiver();
-        // Create AudioEngine only once per view lifecycle; recreate if previously released
         if (audioEngine == null) {
             audioEngine = new AudioEngine();
             updateAudioEngineRecording();
-            audioEngine.startListening();
         }
+        audioEngine.startListening();
         checkPermissionsAndEnableUI();
         updateUI();
     }
@@ -136,8 +172,6 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         }
     }
 
-    // ── Audio ─────────────────────────────────────────────────────────────────
-
     private void updateAudioEngineRecording() {
         if (audioEngine == null) return;
         audioEngine.setRecordEnabled(
@@ -154,13 +188,11 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         if (audioEngine == null) return;
         WifiP2pInfo info = wifiDirectManager.getConnectionInfo();
         if (info == null || !info.groupFormed) {
-            Toast.makeText(getContext(), "Not connected to any peer", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), R.string.not_connected, Toast.LENGTH_SHORT).show();
             viewModel.setIsTalking(false);
             return;
         }
-        String targetIp = info.isGroupOwner
-                ? "192.168.49.255"
-                : info.groupOwnerAddress.getHostAddress();
+        String targetIp = info.isGroupOwner ? "192.168.49.255" : info.groupOwnerAddress.getHostAddress();
         String recordPath = null;
         if (prefs.getBoolean("record_transmissions", false)) {
             String ts = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
@@ -169,65 +201,75 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         audioEngine.startTalking(targetIp, recordPath);
     }
 
-    // ── Observers ─────────────────────────────────────────────────────────────
+    private void setupObservers(final View view) {
+        final TextView tvStatusTitle = view.findViewById(R.id.tv_connection_status_title);
+        final TextView tvStatusDesc = view.findViewById(R.id.tv_connection_status_desc);
+        final TextView tvPeersCount = view.findViewById(R.id.tv_devices_count);
+        final TextView tvSnackText = view.findViewById(R.id.tv_snack_text);
+        final ImageView ivWifi = view.findViewById(R.id.iv_wifi_status);
+        final View volumeIndicator = view.findViewById(R.id.volume_level_indicator);
+        final View snackbar = view.findViewById(R.id.snackbar_container);
+        final View cardBottom = view.findViewById(R.id.card_bottom_status);
 
-    private void setupObservers(View view) {
-        TextView tvStatusTitle = view.findViewById(R.id.tv_connection_status_title);
-        TextView tvStatusDesc = view.findViewById(R.id.tv_connection_status_desc);
-        TextView tvPeersCount = view.findViewById(R.id.tv_devices_count);
-        TextView tvSnackText = view.findViewById(R.id.tv_snack_text);
-        ImageView ivWifi = view.findViewById(R.id.iv_wifi_status);
-        View volumeIndicator = view.findViewById(R.id.volume_level_indicator);
-        View snackbar = view.findViewById(R.id.snackbar_container);
-        View cardBottom = view.findViewById(R.id.card_bottom_status);
-
-        viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), status -> {
-            tvStatusTitle.setText(status);
-            int color;
-            if (status.equals(getString(R.string.connected)))
-                color = ContextCompat.getColor(requireContext(), R.color.greenAccent);
-            else if (status.equals(getString(R.string.searching)))
-                color = ContextCompat.getColor(requireContext(), R.color.dotYellow);
-            else if (status.equals(getString(R.string.status_connecting_title)))
-                color = ContextCompat.getColor(requireContext(), R.color.orangeAccent);
-            else
-                color = ContextCompat.getColor(requireContext(), R.color.dotGrey);
-            tvStatusTitle.setTextColor(color);
-            ivWifi.setColorFilter(color);
-        });
-
-        viewModel.getConnectionDesc().observe(getViewLifecycleOwner(), tvStatusDesc::setText);
-
-        viewModel.getConnectedPeersCount().observe(getViewLifecycleOwner(), count -> {
-            tvPeersCount.setText(count + " " + (count == 1 ? "device connected" : "devices connected"));
-            if (count > 0) {
-                tvSnackText.setText(getString(R.string.connected_to_devices_snackbar, count));
-                snackbar.setVisibility(View.VISIBLE);
-                cardBottom.setVisibility(View.VISIBLE);
-            } else {
-                snackbar.setVisibility(View.GONE);
-                cardBottom.setVisibility(View.GONE);
+        viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), new Observer<String>() {
+            @Override
+            public void onChanged(String status) {
+                tvStatusTitle.setText(status);
+                int color;
+                if (status.equals(getString(R.string.connected)))
+                    color = ContextCompat.getColor(requireContext(), R.color.greenAccent);
+                else if (status.equals(getString(R.string.searching)))
+                    color = ContextCompat.getColor(requireContext(), R.color.dotYellow);
+                else if (status.equals(getString(R.string.status_connecting_title)))
+                    color = ContextCompat.getColor(requireContext(), R.color.orangeAccent);
+                else
+                    color = ContextCompat.getColor(requireContext(), R.color.dotGrey);
+                tvStatusTitle.setTextColor(color);
+                ivWifi.setColorFilter(color);
             }
         });
 
-        viewModel.getAudioLevel().observe(getViewLifecycleOwner(), level -> {
-            if (volumeIndicator != null) {
-                ViewGroup.LayoutParams p = volumeIndicator.getLayoutParams();
-                p.height = level;
-                volumeIndicator.setLayoutParams(p);
+        viewModel.getConnectionDesc().observe(getViewLifecycleOwner(), new Observer<String>() {
+            @Override
+            public void onChanged(String desc) {
+                tvStatusDesc.setText(desc);
             }
         });
 
-        viewModel.getIsTalking().observe(getViewLifecycleOwner(), talking -> {
-            if(talking){
-                startVolumeAnimation();
-            }else{
-                stopVolumeAnimation();
+        viewModel.getConnectedPeersCount().observe(getViewLifecycleOwner(), new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer count) {
+                tvPeersCount.setText(getString(R.string.devices_connected_count, count));
+                if (count > 0) {
+                    tvSnackText.setText(getString(R.string.connected_to_devices_snackbar, count));
+                    snackbar.setVisibility(View.VISIBLE);
+                    cardBottom.setVisibility(View.VISIBLE);
+                } else {
+                    snackbar.setVisibility(View.GONE);
+                    cardBottom.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        viewModel.getAudioLevel().observe(getViewLifecycleOwner(), new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer level) {
+                if (volumeIndicator != null) {
+                    ViewGroup.LayoutParams p = volumeIndicator.getLayoutParams();
+                    p.height = level;
+                    volumeIndicator.setLayoutParams(p);
+                }
+            }
+        });
+
+        viewModel.getIsTalking().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean talking) {
+                if (talking) startVolumeAnimation();
+                else stopVolumeAnimation();
             }
         });
     }
-
-    // ── UI helpers ────────────────────────────────────────────────────────────
 
     private void checkPermissionsAndEnableUI() {
         WifiP2pInfo info = wifiDirectManager.getConnectionInfo();
@@ -239,10 +281,21 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         pttButton.setAlpha(canTalk ? 1.0f : 0.5f);
     }
 
+    private void updateRecordStatusText(boolean isOn) {
+        if (tvRecordStatus != null) {
+            tvRecordStatus.setText(isOn ? R.string.status_on : R.string.status_off);
+            tvRecordStatus.setTextColor(isOn ? 
+                    ContextCompat.getColor(requireContext(), R.color.greenAccent) : 
+                    ContextCompat.getColor(requireContext(), R.color.textSecondary));
+        }
+    }
+
     private void startVolumeAnimation() {
+        handler.removeCallbacksAndMessages(null);
         handler.post(new Runnable() {
             @Override
             public void run() {
+                if (!isAdded() || getView() == null) return;
                 Boolean talking = viewModel.getIsTalking().getValue();
                 if (talking != null && talking && audioEngine != null) {
                     float maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 220,
@@ -270,34 +323,34 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
                     ? R.string.status_connected_owner_title : R.string.status_connected_client_title));
             viewModel.setConnectedPeersCount(1);
         } else {
-            switch (state) {
-                case DISCOVERING:
-                    viewModel.setConnectionStatus(getString(R.string.searching));
-                    viewModel.setConnectionDesc(getString(R.string.status_searching_desc));
-                    break;
-                case CONNECTING:
-                    viewModel.setConnectionStatus(getString(R.string.status_connecting_title));
-                    viewModel.setConnectionDesc(getString(R.string.status_connecting_desc));
-                    break;
-                default:
-                    viewModel.setConnectionStatus(getString(R.string.status_disconnected_title));
-                    viewModel.setConnectionDesc(getString(R.string.status_disconnected_desc));
-                    break;
+            if (state == WifiDirectManager.ConnectionState.DISCOVERING) {
+                viewModel.setConnectionStatus(getString(R.string.searching));
+                viewModel.setConnectionDesc(getString(R.string.status_searching_desc));
+            } else if (state == WifiDirectManager.ConnectionState.CONNECTING) {
+                viewModel.setConnectionStatus(getString(R.string.status_connecting_title));
+                viewModel.setConnectionDesc(getString(R.string.status_connecting_desc));
+            } else {
+                viewModel.setConnectionStatus(getString(R.string.status_disconnected_title));
+                viewModel.setConnectionDesc(getString(R.string.status_disconnected_desc));
             }
             viewModel.setConnectedPeersCount(0);
         }
         checkPermissionsAndEnableUI();
     }
 
-    // ── ConnectionListener ────────────────────────────────────────────────────
-
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
-        if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
+        if (isAdded()) requireActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() { updateUI(); }
+        });
     }
     @Override
     public void onDisconnected() {
-        if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
+        if (isAdded()) requireActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() { updateUI(); }
+        });
     }
     @Override
     public void onWifiP2pEnabled(boolean enabled) {
@@ -308,11 +361,10 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
     }
     @Override
-    public void onConnectionFailed(int reason) {
+    public void onConnectionFailed(final int reason) {
         if (isAdded()) requireActivity().runOnUiThread(() -> {
             updateUI();
-            Toast.makeText(getContext(),
-                    getString(R.string.connection_failed_reason, reason), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.connection_failed, reason), Toast.LENGTH_SHORT).show();
         });
     }
 }

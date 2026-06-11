@@ -18,8 +18,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class AudioEngine {
     private static final String TAG = "AudioEngine";
@@ -30,107 +28,120 @@ public class AudioEngine {
     private static final int PORT = 50005;
     private static final int NOISE_THRESHOLD = 800;
 
-    private volatile boolean isRecording = false;
-    private volatile boolean isPlaying = false;
-    private volatile int lastAmplitude = 0;
+    private boolean isRecording = false;
+    private boolean isPlaying = false;
+    private int lastAmplitude = 0;
 
-    private final ExecutorService talkExecutor = Executors.newSingleThreadExecutor();
-    private final ExecutorService listenExecutor = Executors.newSingleThreadExecutor();
-
-    // guarded by this
     private DatagramSocket listenSocket;
     private AudioRecord recorder;
     private AudioTrack track;
     private NoiseSuppressor noiseSuppressor;
     private AcousticEchoCanceler echoCanceler;
 
-    private volatile String currentRecordDir;
-    private volatile boolean isRecordEnabled = false;
+    private String currentRecordDir;
+    private boolean isRecordEnabled = false;
 
     public void setRecordEnabled(boolean enabled, String dir) {
-        isRecordEnabled = enabled;
-        currentRecordDir = dir;
+        this.isRecordEnabled = enabled;
+        this.currentRecordDir = dir;
     }
 
-    public int getAmplitude() {
+    public synchronized int getAmplitude() {
         return lastAmplitude;
     }
 
     // ── Talk ──────────────────────────────────────────────────────────────────
 
-    public void startTalking(String ipAddress, String recordPath) {
+    public synchronized void startTalking(final String ipAddress, final String recordPath) {
         if (isRecording) return;
         isRecording = true;
-        talkExecutor.execute(() -> {
-            DatagramSocket talkSocket = null;
-            MediaCodec encoder = null;
-            FileOutputStream fos = null;
-            try {
-                talkSocket = new DatagramSocket();
-                if (ipAddress.endsWith(".255")) talkSocket.setBroadcast(true);
-                int minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT);
-                int bufSize = Math.max(minBuf, 2048);
-                recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                        SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, bufSize);
-                if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
-                    Log.e(TAG, "AudioRecord init failed");
-                    isRecording = false;
-                    return;
-                }
-                if (NoiseSuppressor.isAvailable()) {
-                    noiseSuppressor = NoiseSuppressor.create(recorder.getAudioSessionId());
-                    if (noiseSuppressor != null) noiseSuppressor.setEnabled(true);
-                }
-                if (AcousticEchoCanceler.isAvailable()) {
-                    echoCanceler = AcousticEchoCanceler.create(recorder.getAudioSessionId());
-                    if (echoCanceler != null) echoCanceler.setEnabled(true);
-                }
-                if (recordPath != null) {
-                    File file = new File(recordPath);
-                    File parent = file.getParentFile();
-                    if (parent != null && !parent.exists()) parent.mkdirs();
-                    fos = new FileOutputStream(file);
-                    fos.write("#!AMR-WB\n".getBytes());
-                    encoder = createAmrEncoder();
-                    encoder.start();
-                }
-                byte[] buffer = new byte[bufSize];
-                recorder.startRecording();
-                InetAddress address = InetAddress.getByName(ipAddress);
-                while (isRecording) {
-                    int read = recorder.read(buffer, 0, buffer.length);
-                    if (read <= 0) continue;
-                    int max = 0;
-                    for (int i = 0; i < read; i += 2) {
-                        short s = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
-                        if (Math.abs(s) > max) max = Math.abs(s);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                DatagramSocket talkSocket = null;
+                MediaCodec encoder = null;
+                FileOutputStream fos = null;
+                try {
+                    talkSocket = new DatagramSocket();
+                    if (ipAddress.endsWith(".255")) talkSocket.setBroadcast(true);
+
+                    int minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT);
+                    int bufSize = Math.max(minBuf, 2048);
+                    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                            SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, bufSize);
+
+                    if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
+                        isRecording = false;
+                        return;
                     }
-                    lastAmplitude = max;
-                    if (max < NOISE_THRESHOLD) {
-                        Arrays.fill(buffer, 0, read, (byte) 0);
-                        lastAmplitude = 0;
-                    } else {
-                        applySimpleLimiter(buffer, read);
+
+                    if (NoiseSuppressor.isAvailable()) {
+                        noiseSuppressor = NoiseSuppressor.create(recorder.getAudioSessionId());
+                        if (noiseSuppressor != null) noiseSuppressor.setEnabled(true);
                     }
-                    talkSocket.send(new DatagramPacket(buffer, read, address, PORT));
-                    if (encoder != null && fos != null) encodeAndWrite(encoder, fos, buffer, read);
+                    if (AcousticEchoCanceler.isAvailable()) {
+                        echoCanceler = AcousticEchoCanceler.create(recorder.getAudioSessionId());
+                        if (echoCanceler != null) echoCanceler.setEnabled(true);
+                    }
+
+                    if (recordPath != null) {
+                        File file = new File(recordPath);
+                        if (file.getParentFile() != null) file.getParentFile().mkdirs();
+                        fos = new FileOutputStream(file);
+                        fos.write("#!AMR-WB\n".getBytes());
+                        encoder = createAmrEncoder();
+                        encoder.start();
+                    }
+
+                    byte[] buffer = new byte[bufSize];
+                    recorder.startRecording();
+                    InetAddress address = InetAddress.getByName(ipAddress);
+
+                    while (isRecording) {
+                        int read = recorder.read(buffer, 0, buffer.length);
+                        if (read <= 0) continue;
+
+                        int max = 0;
+                        for (int i = 0; i < read; i += 2) {
+                            short s = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
+                            if (Math.abs(s) > max) max = Math.abs(s);
+                        }
+                        lastAmplitude = max;
+
+                        if (max < NOISE_THRESHOLD) {
+                            Arrays.fill(buffer, 0, read, (byte) 0);
+                            lastAmplitude = 0;
+                        } else {
+                            applySimpleLimiter(buffer, read);
+                        }
+
+                        talkSocket.send(new DatagramPacket(buffer, read, address, PORT));
+                        if (encoder != null && fos != null) {
+                            encodeAndWrite(encoder, fos, buffer, read);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Talk error", e);
+                } finally {
+                    stopInternalTalking(talkSocket, encoder, fos);
                 }
-            } catch (IOException | SecurityException e) {
-                Log.e(TAG, "Talk error", e);
-            } finally {
-                releaseRecorder();
-                lastAmplitude = 0;
-                if (talkSocket != null) talkSocket.close();
-                if (encoder != null) {
-                    try { encoder.stop(); } catch (Exception ignored) {}
-                    encoder.release();
-                }
-                if (fos != null) { try { fos.close(); } catch (IOException ignored) {} }
             }
-        });
+        }).start();
     }
 
-    public void stopTalking() {
+    private synchronized void stopInternalTalking(DatagramSocket socket, MediaCodec encoder, FileOutputStream fos) {
+        releaseRecorder();
+        lastAmplitude = 0;
+        if (socket != null) socket.close();
+        if (encoder != null) {
+            try { encoder.stop(); } catch (Exception ignored) {}
+            encoder.release();
+        }
+        if (fos != null) { try { fos.close(); } catch (IOException ignored) {} }
+    }
+
+    public synchronized void stopTalking() {
         isRecording = false;
     }
 
@@ -154,7 +165,7 @@ public class AudioEngine {
         return enc;
     }
 
-    private void encodeAndWrite(MediaCodec enc, FileOutputStream fos, byte[] data, int size) throws IOException {
+    private synchronized void encodeAndWrite(MediaCodec enc, FileOutputStream fos, byte[] data, int size) throws IOException {
         int idx = enc.dequeueInputBuffer(1000);
         if (idx >= 0) {
             ByteBuffer in = enc.getInputBuffer(idx);
@@ -182,12 +193,7 @@ public class AudioEngine {
         if (noiseSuppressor != null) { noiseSuppressor.release(); noiseSuppressor = null; }
         if (echoCanceler != null) { echoCanceler.release(); echoCanceler = null; }
         if (recorder != null) {
-            try {
-                if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
-                    recorder.stop();
-            } catch (Exception e) {
-                Log.e(TAG, "Error stopping recorder", e);
-            }
+            try { if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) recorder.stop(); } catch (Exception ignored) {}
             recorder.release();
             recorder = null;
         }
@@ -195,102 +201,97 @@ public class AudioEngine {
 
     // ── Listen ────────────────────────────────────────────────────────────────
 
-    public void startListening() {
+    public synchronized void startListening() {
         if (isPlaying) return;
         isPlaying = true;
-        listenExecutor.execute(() -> {
-            FileOutputStream fos = null;
-            MediaCodec encoder = null;
-            try {
-                synchronized (this) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                FileOutputStream fos = null;
+                MediaCodec encoder = null;
+                try {
                     listenSocket = new DatagramSocket(PORT);
-                }
-                int minBuf = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
-                int bufSize = Math.max(minBuf, 2048);
-                track = new AudioTrack.Builder()
-                        .setAudioFormat(new AudioFormat.Builder()
-                                .setEncoding(AUDIO_FORMAT)
-                                .setSampleRate(SAMPLE_RATE)
-                                .setChannelMask(CHANNEL_OUT)
-                                .build())
-                        .setBufferSizeInBytes(bufSize)
-                        .setTransferMode(AudioTrack.MODE_STREAM)
-                        .build();
-                byte[] buffer = new byte[bufSize];
-                track.play();
-                while (isPlaying) {
-                    DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
-                    DatagramSocket s;
-                    synchronized (this) { s = listenSocket; }
-                    if (s == null || s.isClosed()) break;
-                    s.receive(pkt);
-                    int length = pkt.getLength();
-                    int max = 0;
-                    for (int i = 0; i < length; i += 2) {
-                        short sample = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
-                        if (Math.abs(sample) > max) max = Math.abs(sample);
-                    }
-                    if (max < NOISE_THRESHOLD) Arrays.fill(buffer, 0, length, (byte) 0);
-                    track.write(buffer, 0, length);
-                    if (isRecordEnabled && currentRecordDir != null) {
-                        if (max >= NOISE_THRESHOLD) {
-                            if (fos == null) {
-                                File dir = new File(currentRecordDir);
-                                if (!dir.exists()) dir.mkdirs();
-                                String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss",
-                                        java.util.Locale.getDefault()).format(new java.util.Date());
-                                fos = new FileOutputStream(new File(dir, ts + "_IN.amr"));
-                                fos.write("#!AMR-WB\n".getBytes());
-                                encoder = createAmrEncoder();
-                                encoder.start();
+                    int minBuf = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
+                    int bufSize = Math.max(minBuf, 2048);
+                    track = new AudioTrack.Builder()
+                            .setAudioFormat(new AudioFormat.Builder()
+                                    .setEncoding(AUDIO_FORMAT)
+                                    .setSampleRate(SAMPLE_RATE)
+                                    .setChannelMask(CHANNEL_OUT)
+                                    .build())
+                            .setBufferSizeInBytes(bufSize)
+                            .setTransferMode(AudioTrack.MODE_STREAM)
+                            .build();
+
+                    byte[] buffer = new byte[bufSize];
+                    track.play();
+
+                    while (isPlaying) {
+                        DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
+                        listenSocket.receive(pkt);
+                        int length = pkt.getLength();
+
+                        int max = 0;
+                        for (int i = 0; i < length; i += 2) {
+                            short sample = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
+                            if (Math.abs(sample) > max) max = Math.abs(sample);
+                        }
+
+                        if (max < NOISE_THRESHOLD) Arrays.fill(buffer, 0, length, (byte) 0);
+                        track.write(buffer, 0, length);
+
+                        if (isRecordEnabled && currentRecordDir != null) {
+                            if (max >= NOISE_THRESHOLD) {
+                                if (fos == null) {
+                                    File dir = new File(currentRecordDir);
+                                    if (!dir.exists()) dir.mkdirs();
+                                    String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(new java.util.Date());
+                                    fos = new FileOutputStream(new File(dir, ts + "_IN.amr"));
+                                    fos.write("#!AMR-WB\n".getBytes());
+                                    encoder = createAmrEncoder();
+                                    encoder.start();
+                                }
+                                encodeAndWrite(encoder, fos, buffer, length);
+                            } else if (fos != null) {
+                                encodeAndWrite(encoder, fos, buffer, length);
                             }
-                            encodeAndWrite(encoder, fos, buffer, length);
-                        } else if (fos != null) {
-                            encodeAndWrite(encoder, fos, buffer, length);
                         }
                     }
+                } catch (Exception e) {
+                    if (isPlaying) Log.e(TAG, "Listen error", e);
+                } finally {
+                    stopInternalListening(encoder, fos);
                 }
-            } catch (IOException e) {
-                if (isPlaying) Log.e(TAG, "Listen error", e);
-            } finally {
-                releaseTrack();
-                synchronized (this) {
-                    if (listenSocket != null) { listenSocket.close(); listenSocket = null; }
-                }
-                if (encoder != null) {
-                    try { encoder.stop(); } catch (Exception ignored) {}
-                    encoder.release();
-                }
-                if (fos != null) { try { fos.close(); } catch (IOException ignored) {} }
             }
-        });
+        }).start();
     }
 
-    public void stopListening() {
+    private synchronized void stopInternalListening(MediaCodec encoder, FileOutputStream fos) {
+        releaseTrack();
+        if (listenSocket != null) { listenSocket.close(); listenSocket = null; }
+        if (encoder != null) {
+            try { encoder.stop(); } catch (Exception ignored) {}
+            encoder.release();
+        }
+        if (fos != null) { try { fos.close(); } catch (IOException ignored) {} }
+    }
+
+    public synchronized void stopListening() {
         isPlaying = false;
-        DatagramSocket s;
-        synchronized (this) { s = listenSocket; }
-        if (s != null) s.close();
+        if (listenSocket != null) listenSocket.close();
     }
 
     private synchronized void releaseTrack() {
         if (track != null) {
-            try {
-                if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) track.stop();
-            } catch (Exception e) {
-                Log.e(TAG, "Error stopping track", e);
-            }
+            try { if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) track.stop(); } catch (Exception ignored) {}
             track.release();
             track = null;
         }
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
     public void release() {
         stopTalking();
         stopListening();
-        talkExecutor.shutdown();
-        listenExecutor.shutdown();
     }
 }

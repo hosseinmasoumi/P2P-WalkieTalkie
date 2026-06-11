@@ -1,39 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Active/Talking State -->
     <item android:state_pressed="true">
         <shape android:shape="oval">
             <gradient
                 android:type="radial"
-                android:gradientRadius="80dp"
+                android:gradientRadius="120dp"
                 android:centerX="0.5"
-                android:centerY="0.5"
-                android:startColor="#FF6B6B"
-                android:endColor="#C62828"/>
-            <stroke android:width="3dp" android:color="#FFCDD2"/>
+                android:centerY="0.4"
+                android:startColor="#B2FF59"
+                android:centerColor="@color/greenAccent"
+                android:endColor="#1B5E20"/>
+            <stroke android:width="3dp" android:color="#CCFFFFFF"/>
         </shape>
     </item>
+
+    <!-- Disabled State -->
     <item android:state_enabled="false">
         <shape android:shape="oval">
-            <gradient
-                android:type="radial"
-                android:gradientRadius="80dp"
-                android:centerX="0.5"
-                android:centerY="0.5"
-                android:startColor="#424242"
-                android:endColor="#212121"/>
+            <solid android:color="#212121"/>
             <stroke android:width="1dp" android:color="#1AFFFFFF"/>
         </shape>
     </item>
+
+    <!-- Default Standby State - Tactile feel -->
     <item>
-        <shape android:shape="oval">
-            <gradient
-                android:type="radial"
-                android:gradientRadius="80dp"
-                android:centerX="0.5"
-                android:centerY="0.5"
-                android:startColor="#E53935"
-                android:endColor="#B71C1C"/>
-            <stroke android:width="2dp" android:color="#4DFFFFFF"/>
-        </shape>
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <gradient
+                        android:type="radial"
+                        android:gradientRadius="120dp"
+                        android:centerX="0.5"
+                        android:centerY="0.3"
+                        android:startColor="#3D3D3D"
+                        android:centerColor="#1E1E1E"
+                        android:endColor="#0A0A0A"/>
+                    <stroke android:width="1.5dp" android:color="#4DFFFFFF"/>
+                </shape>
+            </item>
+            <!-- Highlight Reflection -->
+            <item android:top="10dp" android:left="30dp" android:right="30dp" android:bottom="80dp">
+                <shape android:shape="oval">
+                    <gradient
+                        android:type="linear"
+                        android:angle="270"
+                        android:startColor="#20FFFFFF"
+                        android:endColor="#00FFFFFF"/>
+                </shape>
+            </item>
+        </layer-list>
     </item>
 </selector>

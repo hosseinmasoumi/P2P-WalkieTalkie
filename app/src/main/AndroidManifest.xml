@@ -32,9 +32,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/olo"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/chatgpt_image_jun_9__2026__06_42_39_pm"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 

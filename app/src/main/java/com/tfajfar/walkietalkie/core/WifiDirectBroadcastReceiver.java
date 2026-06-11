@@ -1,10 +1,15 @@
 package com.tfajfar.walkietalkie.core;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Build;
 import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "WifiP2pReceiver";
@@ -24,19 +29,27 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
-            wifiDirectManager.setWifiP2pEnabled(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED);
-            Log.d(TAG, "P2P state changed: " + (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED ? "ENABLED" : "DISABLED"));
+            if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
+                wifiDirectManager.setWifiP2pEnabled(true);
+            } else {
+                wifiDirectManager.setWifiP2pEnabled(false);
+            }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             if (manager != null) {
-                manager.requestPeers(channel, wifiDirectManager.getPeerListListener());
+                boolean hasLoc = ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+                boolean hasNear = true;
+                if (Build.VERSION.SDK_INT >= 33) {
+                    hasNear = ActivityCompat.checkSelfPermission(context, "android.permission.NEARBY_WIFI_DEVICES") == PackageManager.PERMISSION_GRANTED;
+                }
+
+                if (hasLoc && hasNear) {
+                    manager.requestPeers(channel, wifiDirectManager.getPeerListListener());
+                }
             }
-            Log.d(TAG, "Peers changed, requesting new list");
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-            if (manager == null) return;
-            manager.requestConnectionInfo(channel, wifiDirectManager.getConnectionInfoListener());
-            Log.d(TAG, "Connection changed, requesting info");
-        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-            Log.d(TAG, "This device changed");
+            if (manager != null) {
+                manager.requestConnectionInfo(channel, wifiDirectManager.getConnectionInfoListener());
+            }
         }
     }
 }

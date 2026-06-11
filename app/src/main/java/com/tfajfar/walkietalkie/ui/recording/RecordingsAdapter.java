@@ -1,6 +1,8 @@
 package com.tfajfar.walkietalkie.ui.recording;
 
 import android.media.MediaMetadataRetriever;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,13 +17,17 @@ import com.tfajfar.walkietalkie.R;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.ViewHolder> {
 
     private List<File> recordings = new ArrayList<>();
     private final OnRecordingClickListener listener;
+    private final Map<String, String> durationCache = new HashMap<>();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public interface OnRecordingClickListener {
         void onRecordingClick(File file);
@@ -42,16 +48,14 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
 
             @Override
             public boolean areItemsTheSame(int oldPos, int newPos) {
-                return oldList.get(oldPos).getAbsolutePath()
-                        .equals(newList.get(newPos).getAbsolutePath());
+                return oldList.get(oldPos).getAbsolutePath().equals(newList.get(newPos).getAbsolutePath());
             }
 
             @Override
             public boolean areContentsTheSame(int oldPos, int newPos) {
                 File o = oldList.get(oldPos);
                 File n = newList.get(newPos);
-                return o.lastModified() == n.lastModified()
-                        && o.length() == n.length();
+                return o.lastModified() == n.lastModified() && o.length() == n.length();
             }
         });
 
@@ -67,12 +71,11 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        File file = recordings.get(position);
+    public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
+        final File file = recordings.get(position);
         String name = file.getName();
         holder.tvFilename.setText(name);
-        
-        // Parse name: 20241215_143022_OUT.amr
+
         String dateStr = "";
         String direction = "OUT";
         if (name.contains("_")) {
@@ -87,32 +90,59 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
                 direction = parts[2].split("\\.")[0];
             }
         }
-        
-        String duration = getDuration(file);
-        holder.tvDateDuration.setText(String.format("%s • %s", 
-                dateStr.isEmpty() ? holder.itemView.getContext().getString(R.string.unknown_date) : dateStr,
-                duration));
-        
+
+        String duration = durationCache.get(file.getAbsolutePath());
+        if (duration == null) {
+            holder.tvDateDuration.setText(String.format("%s • %s", dateStr.isEmpty() ? "Unknown" : dateStr, "..."));
+            
+            // Simple thread for background work
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    final String d = getDuration(file);
+                    durationCache.put(file.getAbsolutePath(), d);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            int currentPos = holder.getAdapterPosition();
+                            if (currentPos != RecyclerView.NO_POSITION) {
+                                notifyItemChanged(currentPos);
+                            }
+                        }
+                    });
+                }
+            }).start();
+        } else {
+            holder.tvDateDuration.setText(String.format("%s • %s", dateStr.isEmpty() ? "Unknown" : dateStr, duration));
+        }
+
         if ("IN".equalsIgnoreCase(direction)) {
             holder.ivDirection.setImageResource(R.drawable.ic_refresh);
             holder.ivDirection.setRotation(225);
-            holder.ivDirection.setContentDescription(holder.itemView.getContext().getString(R.string.status_incoming));
         } else {
             holder.ivDirection.setImageResource(R.drawable.ic_mic);
             holder.ivDirection.setRotation(0);
-            holder.ivDirection.setContentDescription(holder.itemView.getContext().getString(R.string.status_outgoing));
         }
 
-        holder.itemView.setOnClickListener(v -> listener.onRecordingClick(file));
-        holder.itemView.setOnLongClickListener(v -> {
-            listener.onRecordingLongClick(file);
-            return true;
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                listener.onRecordingClick(file);
+            }
         });
-        holder.btnPlay.setOnClickListener(v -> listener.onRecordingClick(file));
+        
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                listener.onRecordingLongClick(file);
+                return true;
+            }
+        });
     }
 
     private String getDuration(File file) {
-        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
             retriever.setDataSource(file.getAbsolutePath());
             String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (time != null) {
@@ -121,8 +151,9 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
                 long minutes = (timeInMillis / (1000 * 60)) % 60;
                 return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
             }
-        } catch (Exception e) {
-            // Ignore
+        } catch (Exception ignored) {
+        } finally {
+            try { retriever.release(); } catch (Exception ignored) {}
         }
         return "00:00";
     }
@@ -132,7 +163,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.Vi
         return recordings.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvFilename, tvDateDuration;
         ImageView btnPlay, btnMore, ivDirection;
 

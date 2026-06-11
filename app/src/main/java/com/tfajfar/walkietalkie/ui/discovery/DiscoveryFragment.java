@@ -27,6 +27,7 @@ import com.tfajfar.walkietalkie.R;
 import com.tfajfar.walkietalkie.core.WifiDirectManager;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class DiscoveryFragment extends Fragment
         implements DeviceAdapter.OnDeviceClickListener, WifiDirectManager.ConnectionListener {
@@ -35,24 +36,26 @@ public class DiscoveryFragment extends Fragment
     private WifiDirectManager wifiDirectManager;
     private DeviceAdapter adapter;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    // volatile flag: set false in onPause so the runnable stops rescheduling itself
     private volatile boolean discoveryActive = false;
+    
     private final Runnable discoveryRunnable = new Runnable() {
         @Override
         public void run() {
             if (!isAdded() || !discoveryActive) return;
             WifiDirectManager.ConnectionState state = wifiDirectManager.getCurrentState();
-            Log.d(TAG, "Discovery pulse, state=" + state);
             if (state == WifiDirectManager.ConnectionState.DISCONNECTED
                     || state == WifiDirectManager.ConnectionState.DISCOVERING) {
-                wifiDirectManager.discoverPeers(peers -> {
-                    if (isAdded() && discoveryActive) {
-                        adapter.updateDevices(peers);
-                        updateSearchingUI(!peers.isEmpty());
+                
+                wifiDirectManager.discoverPeers(new WifiDirectManager.PeerListListener() {
+                    @Override
+                    public void onPeersAvailable(List<WifiP2pDevice> peers) {
+                        if (isAdded() && discoveryActive) {
+                            adapter.updateDevices(peers);
+                            updateSearchingUI(!peers.isEmpty());
+                        }
                     }
                 });
             }
-            // Only reschedule if still active
             if (discoveryActive) handler.postDelayed(this, 10_000);
         }
     };
@@ -72,8 +75,12 @@ public class DiscoveryFragment extends Fragment
         adapter = new DeviceAdapter(this);
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
         rv.setAdapter(adapter);
-        view.findViewById(R.id.btn_rescan).setOnClickListener(v -> {
-            if (checkWifiAndLocation()) startDiscovery();
+        
+        view.findViewById(R.id.btn_rescan).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (checkWifiAndLocation()) startDiscovery();
+            }
         });
     }
 
@@ -88,7 +95,6 @@ public class DiscoveryFragment extends Fragment
     @Override
     public void onPause() {
         super.onPause();
-        // Stop the loop BEFORE removing callbacks so the check in the runnable sees false
         discoveryActive = false;
         handler.removeCallbacks(discoveryRunnable);
         wifiDirectManager.removeConnectionListener(this);
@@ -97,7 +103,7 @@ public class DiscoveryFragment extends Fragment
 
     private void startDiscovery() {
         if (!isAdded()) return;
-        adapter.updateDevices(new ArrayList<>());
+        adapter.updateDevices(new ArrayList<WifiP2pDevice>());
         updateSearchingUI(false);
         discoveryActive = true;
         handler.removeCallbacks(discoveryRunnable);
@@ -111,21 +117,32 @@ public class DiscoveryFragment extends Fragment
 
     private boolean checkWifiAndLocation() {
         if (!wifiDirectManager.isWifiEnabled()) {
-            showError("Wi-Fi is disabled", "Enable",
-                    v -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)));
+            showError(getString(R.string.wifi_disabled), getString(R.string.status_on), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                }
+            });
             return false;
         }
         if (!wifiDirectManager.isLocationEnabled()) {
-            showError("Location is disabled", "Enable",
-                    v -> startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)));
+            showError(getString(R.string.location_disabled), getString(R.string.status_on), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                }
+            });
             return false;
         }
         if (!wifiDirectManager.hasPermissions()) {
-            showError("Nearby permissions missing", "Settings", v -> {
-                Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                i.setData(android.net.Uri.fromParts("package",
-                        requireContext().getPackageName(), null));
-                startActivity(i);
+            showError(getString(R.string.nearby_permissions_missing), getString(R.string.action_settings), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    i.setData(android.net.Uri.fromParts("package",
+                            requireContext().getPackageName(), null));
+                    startActivity(i);
+                }
             });
             return false;
         }
@@ -154,11 +171,9 @@ public class DiscoveryFragment extends Fragment
         }
     }
 
-    // ── DeviceAdapter.OnDeviceClickListener ───────────────────────────────────
-
     @Override
-    public void onDeviceClick(WifiP2pDevice device) {
-        Toast.makeText(getContext(), "Connecting to " + device.deviceName, Toast.LENGTH_SHORT).show();
+    public void onDeviceClick(final WifiP2pDevice device) {
+        Toast.makeText(getContext(), getString(R.string.connecting_to, device.deviceName), Toast.LENGTH_SHORT).show();
         stopDiscovery();
         wifiDirectManager.connect(device, new WifiP2pManager.ActionListener() {
             @Override
@@ -167,35 +182,35 @@ public class DiscoveryFragment extends Fragment
             public void onFailure(int reason) {
                 if (isAdded()) {
                     Toast.makeText(getContext(),
-                            "Connection failed: " + reason, Toast.LENGTH_SHORT).show();
+                            getString(R.string.connection_failed, reason), Toast.LENGTH_SHORT).show();
                     startDiscovery();
                 }
             }
         });
     }
 
-    // ── ConnectionListener ────────────────────────────────────────────────────
+    private boolean isNavigating = false;
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
-        if (!info.groupFormed || !isAdded()) return;
-        Log.d(TAG, "Group formed, navigating to Talk");
+        if (!info.groupFormed || !isAdded() || isNavigating) return;
         try {
             androidx.navigation.NavController nav = Navigation.findNavController(requireView());
             if (nav.getCurrentDestination() != null
                     && nav.getCurrentDestination().getId() == R.id.nav_devices) {
+                isNavigating = true;
                 nav.navigate(R.id.nav_talk);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Navigation failed", e);
+            isNavigating = false;
         }
     }
 
     @Override
     public void onDisconnected() {
         if (!isAdded()) return;
-        Toast.makeText(getContext(), "Disconnected", Toast.LENGTH_SHORT).show();
-        adapter.updateDevices(new ArrayList<>());
+        Toast.makeText(getContext(), R.string.disconnected, Toast.LENGTH_SHORT).show();
+        adapter.updateDevices(new ArrayList<WifiP2pDevice>());
         startDiscovery();
     }
 
@@ -213,7 +228,7 @@ public class DiscoveryFragment extends Fragment
     @Override
     public void onConnectionRetrying(int attempt, int max) {
         if (!isAdded() || getView() == null) return;
-        String msg = getString(R.string.retry_attempt, attempt, max);
+        final String msg = getString(R.string.retry_attempt, attempt, max);
         Snackbar.make(getView(), msg + ". Retrying in 2 seconds...", Snackbar.LENGTH_SHORT).show();
         TextView tvDesc = getView().findViewById(R.id.tv_searching_desc);
         if (tvDesc != null) tvDesc.setText(msg);

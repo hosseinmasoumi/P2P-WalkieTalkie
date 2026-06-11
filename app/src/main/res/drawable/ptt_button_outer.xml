@@ -1,25 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow for depth -->
+    <item android:top="4dp" android:left="4dp">
+        <shape android:shape="oval">
+            <solid android:color="#40000000"/>
+        </shape>
+    </item>
+
+    <!-- Main Outer Casing -->
     <item>
         <shape android:shape="oval">
             <gradient
                 android:type="linear"
                 android:angle="135"
-                android:startColor="#4A4A4A"
-                android:centerColor="#2A2A2A"
-                android:endColor="#1A1A1A"/>
-            <stroke android:width="2dp" android:color="#666666"/>
+                android:startColor="#2C2C2C"
+                android:centerColor="#1A1A1A"
+                android:endColor="#0F0F0F"/>
+            <stroke android:width="2.5dp" android:color="#3D3D3D"/>
         </shape>
     </item>
-    <item android:top="6dp" android:bottom="6dp" android:left="6dp" android:right="6dp">
+
+    <!-- Tech Ring (Subtle dots/segments simulation) -->
+    <item android:top="8dp" android:bottom="8dp" android:left="8dp" android:right="8dp">
         <shape android:shape="oval">
-            <solid android:color="#0D0D0D"/>
+            <stroke
+                android:width="1dp"
+                android:color="#1AFFFFFF"
+                android:dashWidth="4dp"
+                android:dashGap="4dp"/>
+        </shape>
+    </item>
+
+    <!-- Inner Metallic Rim -->
+    <item android:top="16dp" android:bottom="16dp" android:left="16dp" android:right="16dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="225"
+                android:startColor="#121212"
+                android:endColor="#2A2A2A"/>
             <stroke android:width="1dp" android:color="#000000"/>
         </shape>
     </item>
-    <item android:top="10dp" android:bottom="10dp" android:left="10dp" android:right="10dp">
+
+    <!-- Fine Internal Detail Ring -->
+    <item android:top="22dp" android:bottom="22dp" android:left="22dp" android:right="22dp">
         <shape android:shape="oval">
-            <stroke android:width="1.5dp" android:color="#26FFFFFF"/>
+            <stroke android:width="0.5dp" android:color="#33FFFFFF"/>
         </shape>
     </item>
 </layer-list>

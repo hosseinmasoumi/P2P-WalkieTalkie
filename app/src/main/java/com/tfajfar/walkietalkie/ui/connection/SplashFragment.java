@@ -28,22 +28,24 @@ public class SplashFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull final View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (isAdded()) {
-                if (getActivity() instanceof SplashCallback) {
-                    ((SplashCallback) getActivity()).onSplashFinished();
-                } else {
-                    try {
-                        if (hasAllPermissions()) {
-                            Navigation.findNavController(view).navigate(R.id.action_splash_to_main);
-                        } else {
-                            Navigation.findNavController(view).navigate(R.id.action_splash_to_permissions);
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (isAdded()) {
+                    if (getActivity() instanceof SplashCallback) {
+                        ((SplashCallback) getActivity()).onSplashFinished();
+                    } else {
+                        try {
+                            if (hasAllPermissions()) {
+                                Navigation.findNavController(view).navigate(R.id.action_splash_to_main);
+                            } else {
+                                Navigation.findNavController(view).navigate(R.id.action_splash_to_permissions);
+                            }
+                        } catch (Exception e) {
                         }
-                    } catch (IllegalStateException e) {
-                        // Not hosted in a NavHostFragment
                     }
                 }
             }
@@ -51,7 +53,13 @@ public class SplashFragment extends Fragment {
     }
 
     private boolean hasAllPermissions() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return false;
-        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return false;
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            return false;
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            return ContextCompat.checkSelfPermission(requireContext(), "android.permission.NEARBY_WIFI_DEVICES") == PackageManager.PERMISSION_GRANTED;
+        }
+        return true;
     }
 }
