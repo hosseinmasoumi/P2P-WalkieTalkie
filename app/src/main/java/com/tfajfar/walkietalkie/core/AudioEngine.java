@@ -20,24 +20,18 @@ import java.nio.ByteBuffer;
 public class AudioEngine {
     private static final String TAG = "AudioEngine";
 
-    // Required streaming format for the test.
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO;
     private static final int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
     // 20 ms of 16 kHz, mono, 16-bit PCM = 640 bytes.
-    // Keeping UDP packets small avoids packet fragmentation and noisy playback.
+    // Small UDP packets are more stable on WiFi Direct.
     private static final int UDP_PACKET_SIZE = 640;
 
-    // Low value only for detecting when to start an incoming recording.
-    // We do not mute live audio based on this value, because that can cut quiet voices.
     private static final int RECORDING_START_THRESHOLD = 250;
-
-    // AMR-NB recording uses 8 kHz internally.
     private static final int AMR_NB_SAMPLE_RATE = 8000;
     private static final int AMR_NB_BIT_RATE = 12200;
-
     private static final int PORT = 50005;
 
     private volatile boolean isRecording = false;
@@ -87,12 +81,19 @@ public class AudioEngine {
                     }
 
                     if (recordPath != null) {
-                        File file = new File(recordPath);
-                        if (file.getParentFile() != null) file.getParentFile().mkdirs();
-                        fos = new FileOutputStream(file);
-                        fos.write("#!AMR\n".getBytes());
-                        encoder = createAmrNbEncoder();
-                        encoder.start();
+                        try {
+                            File file = new File(recordPath);
+                            if (file.getParentFile() != null) file.getParentFile().mkdirs();
+                            fos = new FileOutputStream(file);
+                            fos.write("#!AMR\n".getBytes());
+                            encoder = createAmrNbEncoder();
+                            encoder.start();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Outgoing recording disabled", e);
+                            closeQuietly(fos);
+                            fos = null;
+                            encoder = null;
+                        }
                     }
 
                     byte[] packetBuffer = new byte[UDP_PACKET_SIZE];
@@ -102,7 +103,7 @@ public class AudioEngine {
                     while (isRecording) {
                         int read = recorder.read(packetBuffer, 0, packetBuffer.length);
                         if (read <= 0) continue;
-                        if (read % 2 != 0) read--; // keep PCM 16-bit samples aligned
+                        if (read % 2 != 0) read--;
 
                         lastAmplitude = getMaxAmplitude(packetBuffer, read);
                         applySimpleLimiter(packetBuffer, read);
@@ -110,7 +111,15 @@ public class AudioEngine {
                         talkSocket.send(new DatagramPacket(packetBuffer, read, address, PORT));
 
                         if (encoder != null && fos != null) {
-                            encodeAndWrite(encoder, fos, packetBuffer, read);
+                            try {
+                                encodeAndWrite(encoder, fos, packetBuffer, read);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Outgoing recording failed", e);
+                                stopEncoderQuietly(encoder);
+                                closeQuietly(fos);
+                                encoder = null;
+                                fos = null;
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -135,11 +144,8 @@ public class AudioEngine {
         releaseRecorder();
         lastAmplitude = 0;
         if (socket != null) socket.close();
-        if (encoder != null) {
-            try { encoder.stop(); } catch (Exception ignored) {}
-            encoder.release();
-        }
-        if (fos != null) { try { fos.close(); } catch (IOException ignored) {} }
+        stopEncoderQuietly(encoder);
+        closeQuietly(fos);
     }
 
     public synchronized void stopTalking() {
@@ -244,8 +250,8 @@ public class AudioEngine {
                         track.write(packetBuffer, 0, length);
 
                         if (isRecordEnabled && currentRecordDir != null) {
-                            if (max >= RECORDING_START_THRESHOLD) {
-                                if (fos == null) {
+                            if (max >= RECORDING_START_THRESHOLD && fos == null) {
+                                try {
                                     File dir = new File(currentRecordDir);
                                     if (!dir.exists()) dir.mkdirs();
                                     String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(new java.util.Date());
@@ -253,10 +259,24 @@ public class AudioEngine {
                                     fos.write("#!AMR\n".getBytes());
                                     encoder = createAmrNbEncoder();
                                     encoder.start();
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Incoming recording disabled", e);
+                                    closeQuietly(fos);
+                                    fos = null;
+                                    encoder = null;
                                 }
-                                encodeAndWrite(encoder, fos, packetBuffer, length);
-                            } else if (fos != null) {
-                                encodeAndWrite(encoder, fos, packetBuffer, length);
+                            }
+
+                            if (encoder != null && fos != null) {
+                                try {
+                                    encodeAndWrite(encoder, fos, packetBuffer, length);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Incoming recording failed", e);
+                                    stopEncoderQuietly(encoder);
+                                    closeQuietly(fos);
+                                    encoder = null;
+                                    fos = null;
+                                }
                             }
                         }
                     }
@@ -272,11 +292,21 @@ public class AudioEngine {
     private synchronized void stopInternalListening(MediaCodec encoder, FileOutputStream fos) {
         releaseTrack();
         if (listenSocket != null) { listenSocket.close(); listenSocket = null; }
+        stopEncoderQuietly(encoder);
+        closeQuietly(fos);
+    }
+
+    private void stopEncoderQuietly(MediaCodec encoder) {
         if (encoder != null) {
             try { encoder.stop(); } catch (Exception ignored) {}
-            encoder.release();
+            try { encoder.release(); } catch (Exception ignored) {}
         }
-        if (fos != null) { try { fos.close(); } catch (IOException ignored) {} }
+    }
+
+    private void closeQuietly(FileOutputStream fos) {
+        if (fos != null) {
+            try { fos.close(); } catch (IOException ignored) {}
+        }
     }
 
     public synchronized void stopListening() {
