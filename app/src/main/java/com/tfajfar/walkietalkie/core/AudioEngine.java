@@ -26,7 +26,7 @@ public class AudioEngine {
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
     // 20 ms of 16 kHz, mono, 16-bit PCM = 640 bytes.
-    // Small UDP packets are more stable on WiFi Direct.
+    // Small packets are safer for UDP on WiFi Direct.
     private static final int UDP_PACKET_SIZE = 640;
 
     private static final int RECORDING_START_THRESHOLD = 250;
@@ -72,7 +72,8 @@ public class AudioEngine {
                     int minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT);
                     int recordBufferSize = Math.max(minBuf, UDP_PACKET_SIZE * 4);
 
-                    recorder = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                    // MIC is the most compatible source across Android devices.
+                    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                             SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, recordBufferSize);
 
                     if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -222,9 +223,10 @@ public class AudioEngine {
                     int minBuf = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
                     int playBufferSize = Math.max(minBuf, UDP_PACKET_SIZE * 4);
 
+                    // MEDIA routing keeps playback on the normal speaker path.
                     track = new AudioTrack.Builder()
                             .setAudioAttributes(new AudioAttributes.Builder()
-                                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                                    .setUsage(AudioAttributes.USAGE_MEDIA)
                                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                                     .build())
                             .setAudioFormat(new AudioFormat.Builder()
