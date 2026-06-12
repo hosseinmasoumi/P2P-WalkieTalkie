@@ -52,6 +52,15 @@ public class WifiDirectManager {
     private ConnectionState currentState = ConnectionState.DISCONNECTED;
     private int receiverRefCount = 0;
 
+    private int retryCount = 0;
+    private static final int MAX_RETRIES = 3;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    // Keep the last selected device so the app can try to recover after a disconnect.
+    private WifiP2pDevice lastDevice;
+    private WifiP2pManager.ActionListener lastConnectListener;
+    private boolean manualDisconnect = false;
+
     public static synchronized WifiDirectManager getInstance(Context context) {
         if (instance == null) {
             instance = new WifiDirectManager(context.getApplicationContext());
@@ -66,6 +75,7 @@ public class WifiDirectManager {
             @Override
             public void onChannelDisconnected() {
                 Log.e(TAG, "Channel disconnected");
+                scheduleReconnect();
             }
         });
     }
@@ -131,8 +141,6 @@ public class WifiDirectManager {
         addConnectionListener(listener);
     }
 
-    // ── Discovery ─────────────────────────────────────────────────────────────
-
     public void discoverPeers(PeerListListener listener) {
         this.peerListListener = listener;
         if (!isWifiEnabled() || !isLocationEnabled() || !hasPermissions()) {
@@ -149,12 +157,8 @@ public class WifiDirectManager {
     private void startPeerDiscovery() {
         try {
             manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    currentState = ConnectionState.DISCOVERING;
-                }
-                @Override
-                public void onFailure(int reason) {
+                @Override public void onSuccess() { currentState = ConnectionState.DISCOVERING; }
+                @Override public void onFailure(int reason) {
                     currentState = (reason == WifiP2pManager.BUSY)
                             ? ConnectionState.DISCOVERING : ConnectionState.DISCONNECTED;
                 }
@@ -164,14 +168,11 @@ public class WifiDirectManager {
         }
     }
 
-    // ── Connect ───────────────────────────────────────────────────────────────
-
-    private int retryCount = 0;
-    private static final int MAX_RETRIES = 3;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-
     public void connect(WifiP2pDevice device, WifiP2pManager.ActionListener listener) {
         retryCount = 0;
+        manualDisconnect = false;
+        lastDevice = device;
+        lastConnectListener = listener;
         performConnect(device, listener);
     }
 
@@ -181,30 +182,19 @@ public class WifiDirectManager {
         currentState = ConnectionState.CONNECTING;
         try {
             manager.connect(channel, config, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
+                @Override public void onSuccess() {
                     if (listener != null) listener.onSuccess();
                 }
-                @Override
-                public void onFailure(final int reason) {
+                @Override public void onFailure(final int reason) {
                     if (retryCount < MAX_RETRIES) {
                         retryCount++;
-                        synchronized (WifiDirectManager.this) {
-                            for (ConnectionListener cl : connectionListeners)
-                                cl.onConnectionRetrying(retryCount, MAX_RETRIES);
-                        }
+                        notifyRetrying();
                         handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                performConnect(device, listener);
-                            }
+                            @Override public void run() { performConnect(device, listener); }
                         }, 2000);
                     } else {
                         currentState = ConnectionState.DISCONNECTED;
-                        synchronized (WifiDirectManager.this) {
-                            for (ConnectionListener cl : connectionListeners)
-                                cl.onConnectionFailed(reason);
-                        }
+                        notifyFailed(reason);
                         if (listener != null) listener.onFailure(reason);
                     }
                 }
@@ -216,6 +206,8 @@ public class WifiDirectManager {
     }
 
     public void disconnect() {
+        manualDisconnect = true;
+        handler.removeCallbacksAndMessages(null);
         if (manager == null || channel == null) return;
         manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
             @Override public void onSuccess() { onDisconnected(); }
@@ -223,12 +215,36 @@ public class WifiDirectManager {
         });
     }
 
-    // ── Called by BroadcastReceiver ───────────────────────────────────────────
+    private void scheduleReconnect() {
+        if (manualDisconnect || lastDevice == null) return;
+        if (!isWifiEnabled() || !isLocationEnabled() || !hasPermissions()) return;
+
+        retryCount = 0;
+        notifyRetrying(1, MAX_RETRIES);
+        handler.postDelayed(new Runnable() {
+            @Override public void run() {
+                if (!manualDisconnect && lastDevice != null) {
+                    performConnect(lastDevice, lastConnectListener);
+                }
+            }
+        }, 2000);
+    }
+
+    private void notifyRetrying() {
+        notifyRetrying(retryCount, MAX_RETRIES);
+    }
+
+    private synchronized void notifyRetrying(int attempt, int max) {
+        for (ConnectionListener cl : connectionListeners) cl.onConnectionRetrying(attempt, max);
+    }
+
+    private synchronized void notifyFailed(int reason) {
+        for (ConnectionListener cl : connectionListeners) cl.onConnectionFailed(reason);
+    }
 
     protected WifiP2pManager.PeerListListener getPeerListListener() {
         return new WifiP2pManager.PeerListListener() {
-            @Override
-            public void onPeersAvailable(android.net.wifi.p2p.WifiP2pDeviceList list) {
+            @Override public void onPeersAvailable(android.net.wifi.p2p.WifiP2pDeviceList list) {
                 if (peerListListener != null)
                     peerListListener.onPeersAvailable(new ArrayList<WifiP2pDevice>(list.getDeviceList()));
             }
@@ -237,8 +253,7 @@ public class WifiDirectManager {
 
     protected WifiP2pManager.ConnectionInfoListener getConnectionInfoListener() {
         return new WifiP2pManager.ConnectionInfoListener() {
-            @Override
-            public void onConnectionInfoAvailable(WifiP2pInfo info) {
+            @Override public void onConnectionInfoAvailable(WifiP2pInfo info) {
                 connectionInfo = info;
                 if (info.groupFormed) {
                     currentState = info.isGroupOwner
@@ -262,6 +277,7 @@ public class WifiDirectManager {
         synchronized (this) {
             for (ConnectionListener cl : connectionListeners) cl.onDisconnected();
         }
+        scheduleReconnect();
     }
 
     protected void setWifiP2pEnabled(boolean enabled) {
