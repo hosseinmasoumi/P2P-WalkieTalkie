@@ -152,7 +152,7 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         String recordPath = null;
         if (prefs.getBoolean("record_transmissions", false)) {
             String ts = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            recordPath = new File(getRecordingDir(), ts + "_OUT.amr").getAbsolutePath();
+            recordPath = new File(getRecordingDir(), ts + "_OUT.wav").getAbsolutePath();
         }
         audioEngine.startTalking(targetIp, recordPath);
     }
