@@ -1,29 +1,50 @@
-# P2P Walkie Talkie - Entrance Test Submission
+# P2P WalkieTalkie
 
 Name: Hossein Masoumi  
 Date: June 2026
 
-## Overview
+This project is an Android WiFi Direct walkie-talkie application. It allows two Android devices to discover each other, connect directly without internet, and exchange live voice using a Push-to-Talk button.
 
-This project is a reworked version of the original P2P Walkie-Talkie Android app. The goal was to make the app easier to use, more stable, and closer to a real walkie-talkie experience using WiFi Direct.
+The project was updated according to the provided Android development test instructions. The main connection, audio streaming, permission handling, UI feedback, and local recording issues have been fixed. The application has been tested as a working demo and now performs the required core flow in practice.
 
-The app lets two Android devices discover each other with WiFi Direct, connect without internet, and exchange live voice using a Push-to-Talk button.
+## Application Features
 
-## Main Changes
+- Discover nearby Android devices using WiFi Direct.
+- Connect two devices directly without using an external network.
+- Send live voice from one device to another with Push-to-Talk.
+- Receive and play incoming voice in real time.
+- Show clear connection status for disconnected, discovering, connecting, and connected states.
+- Show whether the device is connected as Group Owner or Client.
+- Show the number of connected devices.
+- Display visual feedback when the Push-to-Talk button is pressed.
+- Show a simple audio level meter while speaking.
+- Handle required Android permissions for microphone, location, and WiFi Direct.
+- Keep the Push-to-Talk button disabled when required permissions or connection state are missing.
+- Save outgoing and incoming transmissions when recording is enabled.
+- Store recordings with timestamped file names.
+- Show saved recordings in a separate Recordings screen.
+- Play saved recordings using the device speaker.
+- Share recordings using the Android system share sheet.
 
-- Added runtime permission handling for location, nearby WiFi devices, and microphone access.
-- Added WiFi Direct discovery, connection callbacks, connection state handling, and retry logic.
-- Replaced the old audio flow with a simple `AudioRecord` and `AudioTrack` streaming pipeline.
-- Added Push-to-Talk visual feedback and an audio level meter.
-- Added connected-device status text.
-- Added a `Record Transmissions` switch.
-- Added timestamped local recordings for outgoing and incoming transmissions.
-- Added a Recordings screen with file list, playback, delete, and sharing support.
-- Added clearer user messages with Snackbar where possible.
+## Working Flow
+
+1. Install the APK on two Android devices.
+2. Open the app on both devices.
+3. Grant the required permissions.
+4. Make sure WiFi and Location are enabled.
+5. Use the Devices screen to discover the second device.
+6. Tap the device to connect.
+7. After connection, open the Talk screen.
+8. Hold the Push-to-Talk button and speak.
+9. The other device receives and plays the voice.
+10. Enable Record Transmissions to save voice transmissions.
+11. Open the Recordings screen to view, play, or share saved files.
 
 ## Recording
 
-When `Record Transmissions` is enabled, the app saves transmission files in:
+The app supports local recording of transmissions.
+
+Recorded files are stored in:
 
 ```text
 Music/P2PWalkieTalkie/
@@ -45,55 +66,41 @@ Examples:
 `OUT` means the local user was speaking.  
 `IN` means audio was received from the other device.
 
-## Build Instructions
+## Fixed Issues
+
+The app was improved to address the main problems described in the test instructions:
+
+- Runtime permissions are handled properly.
+- WiFi Direct discovery and connection handling were improved.
+- Connection retry and reconnect behavior were added.
+- Audio streaming was moved to background threads.
+- Live voice transmission now uses `AudioRecord` and `AudioTrack`.
+- One-way audio quality problems were reduced.
+- Microphone clipping and harsh noise were reduced.
+- Recording was separated from the live audio path to avoid disturbing voice transmission.
+- The Push-to-Talk button now gives clear visual feedback.
+- The Recordings screen was cleaned up and only shows saved transmission files.
+- Unused screens and unnecessary UI elements were removed.
+- Error and permission messages were improved.
+
+## Build and Run
 
 Required environment:
 
 - Android Studio Ladybug 2024.2.1 or newer
-- Min SDK: 24
-- Target SDK: 34
-- Two Android devices are recommended for testing WiFi Direct
+- Minimum SDK: API 24
+- Target SDK: API 34
+- Two real Android devices are recommended for WiFi Direct testing
 
 Build steps:
 
 1. Open the project in Android Studio.
 2. Let Gradle sync finish.
-3. Connect an Android device.
-4. Build the debug APK from Android Studio.
+3. Build the project.
+4. Generate the debug APK.
 5. Install the APK on two Android devices.
+6. Test discovery, connection, live voice, recording, playback, and sharing.
 
-## How to Test
+## Final Status
 
-1. Install the app on two Android devices.
-2. Open the app on both devices.
-3. Grant all required permissions.
-4. Make sure WiFi and Location are enabled.
-5. Open the Devices screen and discover nearby devices.
-6. Tap a device to connect.
-7. Open the Talk screen.
-8. Hold the PTT button and speak on one device.
-9. Listen for the audio on the other device.
-10. Enable `Record Transmissions`.
-11. Make a short transmission.
-12. Open the Recordings screen and play the saved file.
-13. Long press a recording to share it.
-
-## Known Limitations
-
-- WiFi Direct behavior can be different across Android devices and manufacturers.
-- Reconnection is simple and tries to connect again to the last selected device.
-- Real latency depends on the device, WiFi Direct signal quality, and Android version.
-- The app should be tested on two real Android devices before final submission.
-
-## Files to Submit
-
-- Full Android Studio project or GitHub repository link
-- Signed debug APK named `P2PWalkieTalkie_HosseinMasoumi.apk`
-- 3 to 5 minute demo video
-- 1 page bug report PDF
-
-## Original Project
-
-Original repository: https://github.com/fajf/P2P-WalkieTalkie
-
-The original project was created as a WiFi P2P demo and was not intended to be production ready. This submission focuses on stabilizing and extending it for the entrance test.
+The application now follows the requested test requirements and works as a practical demo. Two devices can connect through WiFi Direct, exchange live voice, and save incoming and outgoing voice transmissions locally with timestamps.
