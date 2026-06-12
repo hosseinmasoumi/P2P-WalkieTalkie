@@ -42,6 +42,10 @@ public class AudioEngine {
     private AudioRecord recorder;
     private AudioTrack track;
 
+    // When the first packet arrives, we remember the real IP of the other phone.
+    // This lets the Group Owner send directly instead of using noisy broadcast.
+    private volatile String lastRemoteIp;
+
     private String currentRecordDir;
     private boolean isRecordEnabled = false;
 
@@ -65,14 +69,20 @@ public class AudioEngine {
                 MediaCodec encoder = null;
                 FileOutputStream fos = null;
                 try {
+                    // If the app knows the peer IP, use direct unicast.
+                    // Broadcast can loop back to the sender and create harsh noise on some phones.
+                    String targetIp = ipAddress;
+                    if (isBroadcastAddress(ipAddress) && lastRemoteIp != null) {
+                        targetIp = lastRemoteIp;
+                    }
+
                     talkSocket = new DatagramSocket();
                     talkSocket.setSendBufferSize(64 * 1024);
-                    if (ipAddress.endsWith(".255")) talkSocket.setBroadcast(true);
+                    if (isBroadcastAddress(targetIp)) talkSocket.setBroadcast(true);
 
                     int minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT);
                     int recordBufferSize = Math.max(minBuf, UDP_PACKET_SIZE * 4);
 
-                    // MIC is the most compatible source across Android devices.
                     recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                             SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, recordBufferSize);
 
@@ -99,7 +109,7 @@ public class AudioEngine {
 
                     byte[] packetBuffer = new byte[UDP_PACKET_SIZE];
                     recorder.startRecording();
-                    InetAddress address = InetAddress.getByName(ipAddress);
+                    InetAddress address = InetAddress.getByName(targetIp);
 
                     while (isRecording) {
                         int read = recorder.read(packetBuffer, 0, packetBuffer.length);
@@ -130,6 +140,10 @@ public class AudioEngine {
                 }
             }
         }).start();
+    }
+
+    private boolean isBroadcastAddress(String ip) {
+        return ip != null && ip.endsWith(".255");
     }
 
     private int getMaxAmplitude(byte[] buffer, int length) {
@@ -223,7 +237,6 @@ public class AudioEngine {
                     int minBuf = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
                     int playBufferSize = Math.max(minBuf, UDP_PACKET_SIZE * 4);
 
-                    // MEDIA routing keeps playback on the normal speaker path.
                     track = new AudioTrack.Builder()
                             .setAudioAttributes(new AudioAttributes.Builder()
                                     .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -247,6 +260,10 @@ public class AudioEngine {
                         int length = pkt.getLength();
                         if (length <= 0) continue;
                         if (length % 2 != 0) length--;
+
+                        if (pkt.getAddress() != null && !isBroadcastAddress(pkt.getAddress().getHostAddress())) {
+                            lastRemoteIp = pkt.getAddress().getHostAddress();
+                        }
 
                         int max = getMaxAmplitude(packetBuffer, length);
                         track.write(packetBuffer, 0, length);
