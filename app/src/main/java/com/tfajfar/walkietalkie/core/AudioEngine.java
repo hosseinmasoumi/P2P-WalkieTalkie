@@ -21,10 +21,17 @@ import java.util.Arrays;
 
 public class AudioEngine {
     private static final String TAG = "AudioEngine";
+
+    // Streaming settings required by the test.
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO;
     private static final int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+
+    // AMR-NB recording uses 8 kHz internally.
+    private static final int AMR_NB_SAMPLE_RATE = 8000;
+    private static final int AMR_NB_BIT_RATE = 12200;
+
     private static final int PORT = 50005;
     private static final int NOISE_THRESHOLD = 800;
 
@@ -49,8 +56,6 @@ public class AudioEngine {
     public synchronized int getAmplitude() {
         return lastAmplitude;
     }
-
-    // ── Talk ──────────────────────────────────────────────────────────────────
 
     public synchronized void startTalking(final String ipAddress, final String recordPath) {
         if (isRecording) return;
@@ -89,8 +94,8 @@ public class AudioEngine {
                         File file = new File(recordPath);
                         if (file.getParentFile() != null) file.getParentFile().mkdirs();
                         fos = new FileOutputStream(file);
-                        fos.write("#!AMR-WB\n".getBytes());
-                        encoder = createAmrEncoder();
+                        fos.write("#!AMR\n".getBytes());
+                        encoder = createAmrNbEncoder();
                         encoder.start();
                     }
 
@@ -102,11 +107,7 @@ public class AudioEngine {
                         int read = recorder.read(buffer, 0, buffer.length);
                         if (read <= 0) continue;
 
-                        int max = 0;
-                        for (int i = 0; i < read; i += 2) {
-                            short s = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
-                            if (Math.abs(s) > max) max = Math.abs(s);
-                        }
+                        int max = getMaxAmplitude(buffer, read);
                         lastAmplitude = max;
 
                         if (max < NOISE_THRESHOLD) {
@@ -130,6 +131,15 @@ public class AudioEngine {
         }).start();
     }
 
+    private int getMaxAmplitude(byte[] buffer, int length) {
+        int max = 0;
+        for (int i = 0; i + 1 < length; i += 2) {
+            short sample = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
+            if (Math.abs(sample) > max) max = Math.abs(sample);
+        }
+        return max;
+    }
+
     private synchronized void stopInternalTalking(DatagramSocket socket, MediaCodec encoder, FileOutputStream fos) {
         releaseRecorder();
         lastAmplitude = 0;
@@ -146,7 +156,7 @@ public class AudioEngine {
     }
 
     private void applySimpleLimiter(byte[] buf, int len) {
-        for (int i = 0; i < len; i += 2) {
+        for (int i = 0; i + 1 < len; i += 2) {
             short s = (short) ((buf[i + 1] << 8) | (buf[i] & 0xff));
             if (s > 30000) s = 30000;
             else if (s < -30000) s = -30000;
@@ -155,12 +165,13 @@ public class AudioEngine {
         }
     }
 
-    private MediaCodec createAmrEncoder() throws IOException {
-        MediaFormat fmt = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AMR_WB, SAMPLE_RATE, 1);
-        fmt.setInteger(MediaFormat.KEY_BIT_RATE, 23850);
-        fmt.setInteger(MediaFormat.KEY_SAMPLE_RATE, SAMPLE_RATE);
+    private MediaCodec createAmrNbEncoder() throws IOException {
+        // Simple AMR-NB encoder for local transmission recordings.
+        MediaFormat fmt = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AMR_NB, AMR_NB_SAMPLE_RATE, 1);
+        fmt.setInteger(MediaFormat.KEY_BIT_RATE, AMR_NB_BIT_RATE);
+        fmt.setInteger(MediaFormat.KEY_SAMPLE_RATE, AMR_NB_SAMPLE_RATE);
         fmt.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
-        MediaCodec enc = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AMR_WB);
+        MediaCodec enc = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AMR_NB);
         enc.configure(fmt, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         return enc;
     }
@@ -171,8 +182,8 @@ public class AudioEngine {
             ByteBuffer in = enc.getInputBuffer(idx);
             if (in != null) {
                 in.clear();
-                in.put(data, 0, size);
-                enc.queueInputBuffer(idx, 0, size, System.nanoTime() / 1000, 0);
+                in.put(data, 0, Math.min(size, in.remaining()));
+                enc.queueInputBuffer(idx, 0, Math.min(size, in.position()), System.nanoTime() / 1000, 0);
             }
         }
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
@@ -198,8 +209,6 @@ public class AudioEngine {
             recorder = null;
         }
     }
-
-    // ── Listen ────────────────────────────────────────────────────────────────
 
     public synchronized void startListening() {
         if (isPlaying) return;
@@ -232,12 +241,7 @@ public class AudioEngine {
                         listenSocket.receive(pkt);
                         int length = pkt.getLength();
 
-                        int max = 0;
-                        for (int i = 0; i < length; i += 2) {
-                            short sample = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xff));
-                            if (Math.abs(sample) > max) max = Math.abs(sample);
-                        }
-
+                        int max = getMaxAmplitude(buffer, length);
                         if (max < NOISE_THRESHOLD) Arrays.fill(buffer, 0, length, (byte) 0);
                         track.write(buffer, 0, length);
 
@@ -248,8 +252,8 @@ public class AudioEngine {
                                     if (!dir.exists()) dir.mkdirs();
                                     String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(new java.util.Date());
                                     fos = new FileOutputStream(new File(dir, ts + "_IN.amr"));
-                                    fos.write("#!AMR-WB\n".getBytes());
-                                    encoder = createAmrEncoder();
+                                    fos.write("#!AMR\n".getBytes());
+                                    encoder = createAmrNbEncoder();
                                     encoder.start();
                                 }
                                 encodeAndWrite(encoder, fos, buffer, length);
