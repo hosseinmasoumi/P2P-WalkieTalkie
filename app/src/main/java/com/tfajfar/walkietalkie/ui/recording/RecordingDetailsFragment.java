@@ -48,19 +48,10 @@ public class RecordingDetailsFragment extends Fragment {
         tvCurrentTime = view.findViewById(R.id.tv_current_time);
         tvTotalDuration = view.findViewById(R.id.tv_total_duration);
         
-        view.findViewById(R.id.toolbar).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Navigation.findNavController(v).popBackStack();
-            }
-        });
+        view.findViewById(R.id.toolbar).setOnClickListener(v -> Navigation.findNavController(v).popBackStack());
 
         RecordingDetailsFragmentArgs args = RecordingDetailsFragmentArgs.fromBundle(getArguments());
         final String filePath = args.getFilePath();
-        if (filePath == null) {
-            Toast.makeText(getContext(), R.string.no_file_specified, Toast.LENGTH_SHORT).show();
-            return;
-        }
         final File file = new File(filePath);
         if (!file.exists()) {
             Toast.makeText(getContext(), R.string.file_not_found, Toast.LENGTH_SHORT).show();
@@ -85,12 +76,7 @@ public class RecordingDetailsFragment extends Fragment {
         
         view.findViewById(R.id.btn_rewind_10).setOnClickListener(v -> seekBy(-10_000));
         
-        view.findViewById(R.id.btn_forward_10).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                seekBy(10_000);
-            }
-        });
+        view.findViewById(R.id.btn_forward_10).setOnClickListener(v -> seekBy(10_000));
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -111,33 +97,24 @@ public class RecordingDetailsFragment extends Fragment {
         mediaPlayer = new MediaPlayer();
         try {
             mediaPlayer.setDataSource(file.getAbsolutePath());
-            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    if (!isAdded()) return;
-                    playerReady = true;
-                    int duration = mp.getDuration();
-                    seekBar.setMax(duration);
-                    tvTotalDuration.setText(formatTime(duration));
-                }
+            mediaPlayer.setOnPreparedListener(mp -> {
+                if (!isAdded()) return;
+                playerReady = true;
+                int duration = mp.getDuration();
+                seekBar.setMax(duration);
+                tvTotalDuration.setText(formatTime(duration));
             });
-            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(MediaPlayer mp, int what, int extra) {
-                    if (!isAdded()) return true;
-                    playerReady = false;
-                    Toast.makeText(getContext(), R.string.error_loading_audio, Toast.LENGTH_SHORT).show();
-                    setPlayerControlsEnabled(false);
-                    return true;
-                }
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                if (!isAdded()) return true;
+                playerReady = false;
+                Toast.makeText(getContext(), R.string.error_loading_audio, Toast.LENGTH_SHORT).show();
+                setPlayerControlsEnabled(false);
+                return true;
             });
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                    seekBar.setProgress(0);
-                    tvCurrentTime.setText(formatTime(0));
-                }
+            mediaPlayer.setOnCompletionListener(mp -> {
+                btnPlayPause.setImageResource(R.drawable.ic_play);
+                seekBar.setProgress(0);
+                tvCurrentTime.setText(formatTime(0));
             });
             mediaPlayer.prepareAsync();
         } catch (IOException e) {
