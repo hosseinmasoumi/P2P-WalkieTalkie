@@ -1,28 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.tfajfar.walkietalkie">
+
+    <!-- WiFi Direct permissions -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- WiFi Direct P2P Permissions -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    
-    <!-- Location Permissions (Required for WiFi Direct on Android 6.0+) -->
+
+    <!-- Required for WiFi Direct discovery on modern Android versions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
 
-    <!-- Nearby Devices (Required for Android 13+) -->
-    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
-                     android:usesPermissionFlags="neverForLocation" />
-
-    <!-- Audio Permissions -->
+    <!-- Voice transmission -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    
-    <!-- Network Permissions -->
+
     <uses-permission android:name="android.permission.INTERNET" />
-    
-    <!-- Features -->
+
     <uses-feature
         android:name="android.hardware.wifi.direct"
         android:required="true" />
@@ -38,7 +36,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!-- FileProvider for sharing recorded audio files -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -58,18 +55,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ui.permissions.PermissionsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.guide.GuideActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.recording.RecordingDetailsActivity"
-            android:exported="false" />
 
     </application>
 
