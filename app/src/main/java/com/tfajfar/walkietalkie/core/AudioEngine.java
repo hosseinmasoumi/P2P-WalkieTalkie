@@ -1,13 +1,12 @@
 package com.tfajfar.walkietalkie.core;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
-import android.media.audiofx.AcousticEchoCanceler;
-import android.media.audiofx.NoiseSuppressor;
 import android.util.Log;
 
 import java.io.File;
@@ -17,33 +16,37 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class AudioEngine {
     private static final String TAG = "AudioEngine";
 
-    // Streaming settings required by the test.
+    // Required streaming format for the test.
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO;
     private static final int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+
+    // 20 ms of 16 kHz, mono, 16-bit PCM = 640 bytes.
+    // Keeping UDP packets small avoids packet fragmentation and noisy playback.
+    private static final int UDP_PACKET_SIZE = 640;
+
+    // Low value only for detecting when to start an incoming recording.
+    // We do not mute live audio based on this value, because that can cut quiet voices.
+    private static final int RECORDING_START_THRESHOLD = 250;
 
     // AMR-NB recording uses 8 kHz internally.
     private static final int AMR_NB_SAMPLE_RATE = 8000;
     private static final int AMR_NB_BIT_RATE = 12200;
 
     private static final int PORT = 50005;
-    private static final int NOISE_THRESHOLD = 800;
 
-    private boolean isRecording = false;
-    private boolean isPlaying = false;
+    private volatile boolean isRecording = false;
+    private volatile boolean isPlaying = false;
     private int lastAmplitude = 0;
 
     private DatagramSocket listenSocket;
     private AudioRecord recorder;
     private AudioTrack track;
-    private NoiseSuppressor noiseSuppressor;
-    private AcousticEchoCanceler echoCanceler;
 
     private String currentRecordDir;
     private boolean isRecordEnabled = false;
@@ -69,25 +72,18 @@ public class AudioEngine {
                 FileOutputStream fos = null;
                 try {
                     talkSocket = new DatagramSocket();
+                    talkSocket.setSendBufferSize(64 * 1024);
                     if (ipAddress.endsWith(".255")) talkSocket.setBroadcast(true);
 
                     int minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT);
-                    int bufSize = Math.max(minBuf, 2048);
-                    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                            SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, bufSize);
+                    int recordBufferSize = Math.max(minBuf, UDP_PACKET_SIZE * 4);
+
+                    recorder = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                            SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, recordBufferSize);
 
                     if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
                         isRecording = false;
                         return;
-                    }
-
-                    if (NoiseSuppressor.isAvailable()) {
-                        noiseSuppressor = NoiseSuppressor.create(recorder.getAudioSessionId());
-                        if (noiseSuppressor != null) noiseSuppressor.setEnabled(true);
-                    }
-                    if (AcousticEchoCanceler.isAvailable()) {
-                        echoCanceler = AcousticEchoCanceler.create(recorder.getAudioSessionId());
-                        if (echoCanceler != null) echoCanceler.setEnabled(true);
                     }
 
                     if (recordPath != null) {
@@ -99,27 +95,22 @@ public class AudioEngine {
                         encoder.start();
                     }
 
-                    byte[] buffer = new byte[bufSize];
+                    byte[] packetBuffer = new byte[UDP_PACKET_SIZE];
                     recorder.startRecording();
                     InetAddress address = InetAddress.getByName(ipAddress);
 
                     while (isRecording) {
-                        int read = recorder.read(buffer, 0, buffer.length);
+                        int read = recorder.read(packetBuffer, 0, packetBuffer.length);
                         if (read <= 0) continue;
+                        if (read % 2 != 0) read--; // keep PCM 16-bit samples aligned
 
-                        int max = getMaxAmplitude(buffer, read);
-                        lastAmplitude = max;
+                        lastAmplitude = getMaxAmplitude(packetBuffer, read);
+                        applySimpleLimiter(packetBuffer, read);
 
-                        if (max < NOISE_THRESHOLD) {
-                            Arrays.fill(buffer, 0, read, (byte) 0);
-                            lastAmplitude = 0;
-                        } else {
-                            applySimpleLimiter(buffer, read);
-                        }
+                        talkSocket.send(new DatagramPacket(packetBuffer, read, address, PORT));
 
-                        talkSocket.send(new DatagramPacket(buffer, read, address, PORT));
                         if (encoder != null && fos != null) {
-                            encodeAndWrite(encoder, fos, buffer, read);
+                            encodeAndWrite(encoder, fos, packetBuffer, read);
                         }
                     }
                 } catch (Exception e) {
@@ -166,7 +157,6 @@ public class AudioEngine {
     }
 
     private MediaCodec createAmrNbEncoder() throws IOException {
-        // Simple AMR-NB encoder for local transmission recordings.
         MediaFormat fmt = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AMR_NB, AMR_NB_SAMPLE_RATE, 1);
         fmt.setInteger(MediaFormat.KEY_BIT_RATE, AMR_NB_BIT_RATE);
         fmt.setInteger(MediaFormat.KEY_SAMPLE_RATE, AMR_NB_SAMPLE_RATE);
@@ -177,20 +167,22 @@ public class AudioEngine {
     }
 
     private synchronized void encodeAndWrite(MediaCodec enc, FileOutputStream fos, byte[] data, int size) throws IOException {
-        int idx = enc.dequeueInputBuffer(1000);
+        int idx = enc.dequeueInputBuffer(0);
         if (idx >= 0) {
             ByteBuffer in = enc.getInputBuffer(idx);
             if (in != null) {
                 in.clear();
-                in.put(data, 0, Math.min(size, in.remaining()));
-                enc.queueInputBuffer(idx, 0, Math.min(size, in.position()), System.nanoTime() / 1000, 0);
+                int bytesToWrite = Math.min(size, in.remaining());
+                in.put(data, 0, bytesToWrite);
+                enc.queueInputBuffer(idx, 0, bytesToWrite, System.nanoTime() / 1000, 0);
             }
         }
+
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        int out = enc.dequeueOutputBuffer(info, 1000);
+        int out = enc.dequeueOutputBuffer(info, 0);
         while (out >= 0) {
             ByteBuffer outBuf = enc.getOutputBuffer(out);
-            if (outBuf != null) {
+            if (outBuf != null && info.size > 0) {
                 byte[] outData = new byte[info.size];
                 outBuf.get(outData);
                 fos.write(outData);
@@ -201,8 +193,6 @@ public class AudioEngine {
     }
 
     private synchronized void releaseRecorder() {
-        if (noiseSuppressor != null) { noiseSuppressor.release(); noiseSuppressor = null; }
-        if (echoCanceler != null) { echoCanceler.release(); echoCanceler = null; }
         if (recorder != null) {
             try { if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) recorder.stop(); } catch (Exception ignored) {}
             recorder.release();
@@ -221,32 +211,40 @@ public class AudioEngine {
                 MediaCodec encoder = null;
                 try {
                     listenSocket = new DatagramSocket(PORT);
+                    listenSocket.setReceiveBufferSize(64 * 1024);
+
                     int minBuf = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
-                    int bufSize = Math.max(minBuf, 2048);
+                    int playBufferSize = Math.max(minBuf, UDP_PACKET_SIZE * 4);
+
                     track = new AudioTrack.Builder()
+                            .setAudioAttributes(new AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                    .build())
                             .setAudioFormat(new AudioFormat.Builder()
                                     .setEncoding(AUDIO_FORMAT)
                                     .setSampleRate(SAMPLE_RATE)
                                     .setChannelMask(CHANNEL_OUT)
                                     .build())
-                            .setBufferSizeInBytes(bufSize)
+                            .setBufferSizeInBytes(playBufferSize)
                             .setTransferMode(AudioTrack.MODE_STREAM)
                             .build();
 
-                    byte[] buffer = new byte[bufSize];
+                    byte[] packetBuffer = new byte[UDP_PACKET_SIZE];
                     track.play();
 
                     while (isPlaying) {
-                        DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
+                        DatagramPacket pkt = new DatagramPacket(packetBuffer, packetBuffer.length);
                         listenSocket.receive(pkt);
                         int length = pkt.getLength();
+                        if (length <= 0) continue;
+                        if (length % 2 != 0) length--;
 
-                        int max = getMaxAmplitude(buffer, length);
-                        if (max < NOISE_THRESHOLD) Arrays.fill(buffer, 0, length, (byte) 0);
-                        track.write(buffer, 0, length);
+                        int max = getMaxAmplitude(packetBuffer, length);
+                        track.write(packetBuffer, 0, length);
 
                         if (isRecordEnabled && currentRecordDir != null) {
-                            if (max >= NOISE_THRESHOLD) {
+                            if (max >= RECORDING_START_THRESHOLD) {
                                 if (fos == null) {
                                     File dir = new File(currentRecordDir);
                                     if (!dir.exists()) dir.mkdirs();
@@ -256,9 +254,9 @@ public class AudioEngine {
                                     encoder = createAmrNbEncoder();
                                     encoder.start();
                                 }
-                                encodeAndWrite(encoder, fos, buffer, length);
+                                encodeAndWrite(encoder, fos, packetBuffer, length);
                             } else if (fos != null) {
-                                encodeAndWrite(encoder, fos, buffer, length);
+                                encodeAndWrite(encoder, fos, packetBuffer, length);
                             }
                         }
                     }
