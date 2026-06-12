@@ -78,8 +78,7 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
             File[] files = dir.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(File f) {
-                    String name = f.getName().toLowerCase();
-                    return f.isFile() && (name.endsWith(".wav") || name.endsWith(".amr"));
+                    return f.isFile() && f.getName().toLowerCase().endsWith(".amr");
                 }
             });
 
