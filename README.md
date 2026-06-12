@@ -83,24 +83,6 @@ The app was improved to address the main problems described in the test instruct
 - Unused screens and unnecessary UI elements were removed.
 - Error and permission messages were improved.
 
-## Build and Run
-
-Required environment:
-
-- Android Studio Ladybug 2024.2.1 or newer
-- Minimum SDK: API 24
-- Target SDK: API 34
-- Two real Android devices are recommended for WiFi Direct testing
-
-Build steps:
-
-1. Open the project in Android Studio.
-2. Let Gradle sync finish.
-3. Build the project.
-4. Generate the debug APK.
-5. Install the APK on two Android devices.
-6. Test discovery, connection, live voice, recording, playback, and sharing.
-
 ## Final Status
 
 The application now follows the requested test requirements and works as a practical demo. Two devices can connect through WiFi Direct, exchange live voice, and save incoming and outgoing voice transmissions locally with timestamps.
