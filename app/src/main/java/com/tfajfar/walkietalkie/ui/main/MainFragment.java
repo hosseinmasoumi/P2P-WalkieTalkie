@@ -44,10 +44,12 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
     private WifiDirectManager wifiDirectManager;
     private MainViewModel viewModel;
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Handler snackHandler = new Handler(Looper.getMainLooper());
     private SwitchMaterial recordSwitch;
     private TextView tvRecordStatus;
     private View pttButton;
     private SharedPreferences prefs;
+    private boolean connectedMessageShown = false;
 
     @Nullable
     @Override
@@ -125,7 +127,10 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
     }
 
     @Override public void onDestroyView() {
-        super.onDestroyView(); handler.removeCallbacksAndMessages(null); releaseAudioEngine();
+        super.onDestroyView();
+        handler.removeCallbacksAndMessages(null);
+        snackHandler.removeCallbacksAndMessages(null);
+        releaseAudioEngine();
     }
 
     private void releaseAudioEngine() {
@@ -180,8 +185,23 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         viewModel.getConnectionDesc().observe(getViewLifecycleOwner(), desc -> tvStatusDesc.setText(desc));
         viewModel.getConnectedPeersCount().observe(getViewLifecycleOwner(), count -> {
             tvPeersCount.setText(getString(R.string.devices_connected_count, count));
-            if (count > 0) { tvSnackText.setText(getString(R.string.connected_to_devices_snackbar, count)); snackbar.setVisibility(View.VISIBLE); cardBottom.setVisibility(View.VISIBLE); }
-            else { snackbar.setVisibility(View.GONE); cardBottom.setVisibility(View.GONE); }
+            if (count > 0) {
+                cardBottom.setVisibility(View.VISIBLE);
+                if (!connectedMessageShown) {
+                    connectedMessageShown = true;
+                    tvSnackText.setText(getString(R.string.connected_to_devices_snackbar, count));
+                    snackbar.setVisibility(View.VISIBLE);
+                    snackHandler.postDelayed(new Runnable() {
+                        @Override public void run() {
+                            snackbar.setVisibility(View.GONE);
+                        }
+                    }, 3000);
+                }
+            } else {
+                connectedMessageShown = false;
+                snackbar.setVisibility(View.GONE);
+                cardBottom.setVisibility(View.GONE);
+            }
         });
         viewModel.getAudioLevel().observe(getViewLifecycleOwner(), level -> {
             if (volumeIndicator != null) { ViewGroup.LayoutParams p = volumeIndicator.getLayoutParams(); p.height = level; volumeIndicator.setLayoutParams(p); }
