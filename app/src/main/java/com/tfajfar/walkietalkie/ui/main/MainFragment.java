@@ -116,7 +116,6 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
     public void onResume() {
         super.onResume();
         wifiDirectManager.addConnectionListener(this);
-        wifiDirectManager.registerReceiver();
         if (audioEngine == null) {
             audioEngine = new AudioEngine();
         }
@@ -131,7 +130,6 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         super.onPause();
         if (audioEngine != null) audioEngine.stopTalking();
         wifiDirectManager.removeConnectionListener(this);
-        wifiDirectManager.unregisterReceiver();
     }
 
     @Override
