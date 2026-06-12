@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -17,6 +16,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.tfajfar.walkietalkie.R;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class PermissionsFragment extends Fragment {
 
         view.findViewById(R.id.btn_grant_permissions).setOnClickListener(v -> requestRequiredPermissions());
         view.findViewById(R.id.btn_retry).setOnClickListener(v -> requestRequiredPermissions());
-        
+
         checkExistingPermissions();
         updatePermissionStatus(view);
     }
@@ -123,8 +123,10 @@ public class PermissionsFragment extends Fragment {
 
         if (allGranted) {
             navigateToMain();
-        } else {
-            Toast.makeText(getContext(), R.string.all_permissions_required, Toast.LENGTH_LONG).show();
+        } else if (getView() != null) {
+            Snackbar.make(getView(), R.string.all_permissions_required, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.btn_retry, v -> requestRequiredPermissions())
+                    .show();
         }
     }
 
