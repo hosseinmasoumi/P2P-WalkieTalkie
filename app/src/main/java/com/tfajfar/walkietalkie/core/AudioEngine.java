@@ -29,6 +29,11 @@ public class AudioEngine {
     // Small packets are safer for UDP on WiFi Direct.
     private static final int UDP_PACKET_SIZE = 640;
 
+    // Keep outgoing sound clear but not too loud. Some phones record very hot audio.
+    private static final int TARGET_MIC_LEVEL = 14000;
+    private static final float NORMAL_MIC_GAIN = 0.85f;
+    private static final float MIN_MIC_GAIN = 0.45f;
+
     private static final int RECORDING_START_THRESHOLD = 250;
     private static final int AMR_NB_SAMPLE_RATE = 8000;
     private static final int AMR_NB_BIT_RATE = 12200;
@@ -117,7 +122,7 @@ public class AudioEngine {
                         if (read % 2 != 0) read--;
 
                         lastAmplitude = getMaxAmplitude(packetBuffer, read);
-                        applySimpleLimiter(packetBuffer, read);
+                        processOutgoingAudio(packetBuffer, read, lastAmplitude);
 
                         talkSocket.send(new DatagramPacket(packetBuffer, read, address, PORT));
 
@@ -167,13 +172,34 @@ public class AudioEngine {
         isRecording = false;
     }
 
-    private void applySimpleLimiter(byte[] buf, int len) {
+    private void processOutgoingAudio(byte[] buf, int len, int maxAmplitude) {
+        float gain = NORMAL_MIC_GAIN;
+
+        // If a phone microphone is too loud, reduce it before sending.
+        if (maxAmplitude > TARGET_MIC_LEVEL) {
+            gain = TARGET_MIC_LEVEL / (float) maxAmplitude;
+            if (gain < MIN_MIC_GAIN) gain = MIN_MIC_GAIN;
+        }
+
+        // Very quiet voice should not be reduced more.
+        if (maxAmplitude < 3000) {
+            gain = 1.0f;
+        }
+
+        short previous = 0;
         for (int i = 0; i + 1 < len; i += 2) {
-            short s = (short) ((buf[i + 1] << 8) | (buf[i] & 0xff));
-            if (s > 30000) s = 30000;
-            else if (s < -30000) s = -30000;
-            buf[i] = (byte) (s & 0xff);
-            buf[i + 1] = (byte) ((s >> 8) & 0xff);
+            short sample = (short) ((buf[i + 1] << 8) | (buf[i] & 0xff));
+            int value = (int) (sample * gain);
+
+            // A tiny smoothing step removes sharp microphone artifacts.
+            value = (value + previous) / 2;
+            previous = (short) value;
+
+            if (value > 22000) value = 22000;
+            else if (value < -22000) value = -22000;
+
+            buf[i] = (byte) (value & 0xff);
+            buf[i + 1] = (byte) ((value >> 8) & 0xff);
         }
     }
 
