@@ -1,7 +1,6 @@
 package com.tfajfar.walkietalkie.ui.recording;
 
 import android.content.Intent;
-import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -17,29 +16,22 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.snackbar.Snackbar;
 import com.tfajfar.walkietalkie.R;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class RecordingsFragment extends Fragment implements RecordingsAdapter.OnRecordingClickListener {
 
     private RecordingsAdapter adapter;
     private View emptyState;
-    private ExtendedFloatingActionButton fabRecord;
-    private MediaRecorder mediaRecorder;
-    private boolean isRecording = false;
 
     @Nullable
     @Override
@@ -59,12 +51,10 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
         rv.setAdapter(adapter);
 
-        // This button is only a small manual test recorder for the recordings screen.
-        // The main test feature is still the Record Transmissions switch on the Talk screen.
-        fabRecord = view.findViewById(R.id.fab_record_voice);
-        fabRecord.setOnClickListener(v -> {
-            if (isRecording) stopRecording();
-            else startRecording();
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> {
+            androidx.drawerlayout.widget.DrawerLayout drawer = requireActivity().findViewById(R.id.drawer_layout);
+            if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
         });
 
         loadRecordings();
@@ -73,71 +63,6 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
     private File getRecordingDir() {
         File musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
         return new File(musicDir, "P2PWalkieTalkie");
-    }
-
-    private void startRecording() {
-        File dir = getRecordingDir();
-        if (!dir.exists() && !dir.mkdirs()) {
-            showMessage(getString(R.string.recording_failed));
-            return;
-        }
-
-        String ts = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        File file = new File(dir, ts + "_OUT.amr");
-
-        mediaRecorder = new MediaRecorder();
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        // Required by the test: 3GP container with AMR narrowband audio.
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        mediaRecorder.setOutputFile(file.getAbsolutePath());
-
-        try {
-            mediaRecorder.prepare();
-            mediaRecorder.start();
-            isRecording = true;
-            fabRecord.setText(R.string.btn_stop);
-            fabRecord.setIconResource(R.drawable.ic_stop);
-            showMessage(getString(R.string.recording_started));
-        } catch (IOException | RuntimeException e) {
-            releaseRecorder();
-            showMessage(getString(R.string.recording_failed));
-        }
-    }
-
-    private void stopRecording() {
-        if (mediaRecorder == null) return;
-
-        try {
-            mediaRecorder.stop();
-            showMessage(getString(R.string.recording_saved));
-        } catch (RuntimeException e) {
-            showMessage(getString(R.string.recording_failed));
-        }
-
-        releaseRecorder();
-        fabRecord.setText(R.string.btn_record_voice);
-        fabRecord.setIconResource(R.drawable.ic_mic);
-        loadRecordings();
-    }
-
-    private void releaseRecorder() {
-        if (mediaRecorder != null) {
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
-        isRecording = false;
-    }
-
-    private void showMessage(String message) {
-        View view = getView();
-        if (view != null) Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if (isRecording) stopRecording();
     }
 
     @Override
@@ -201,5 +126,10 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
         } catch (Exception e) {
             showMessage(getString(R.string.error_loading_audio));
         }
+    }
+
+    private void showMessage(String message) {
+        View view = getView();
+        if (view != null) Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
     }
 }
