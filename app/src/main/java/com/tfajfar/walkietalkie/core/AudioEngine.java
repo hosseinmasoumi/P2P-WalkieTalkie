@@ -4,18 +4,15 @@ import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
-import android.media.MediaCodec;
-import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
 
 public class AudioEngine {
     private static final String TAG = "AudioEngine";
@@ -26,18 +23,13 @@ public class AudioEngine {
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
     // 20 ms of 16 kHz, mono, 16-bit PCM = 640 bytes.
-    // Small packets are safer for UDP on WiFi Direct.
     private static final int UDP_PACKET_SIZE = 640;
+    private static final int PORT = 50005;
 
-    // Keep outgoing sound clear but not too loud. Some phones record very hot audio.
     private static final int TARGET_MIC_LEVEL = 14000;
     private static final float NORMAL_MIC_GAIN = 0.85f;
     private static final float MIN_MIC_GAIN = 0.45f;
-
     private static final int RECORDING_START_THRESHOLD = 250;
-    private static final int AMR_NB_SAMPLE_RATE = 8000;
-    private static final int AMR_NB_BIT_RATE = 12200;
-    private static final int PORT = 50005;
 
     private volatile boolean isRecording = false;
     private volatile boolean isPlaying = false;
@@ -47,16 +39,15 @@ public class AudioEngine {
     private AudioRecord recorder;
     private AudioTrack track;
 
-    // When the first packet arrives, we remember the real IP of the other phone.
-    // This lets the Group Owner send directly instead of using noisy broadcast.
+    // Saved after the first received packet, so Group Owner can send direct instead of broadcast.
     private volatile String lastRemoteIp;
 
     private String currentRecordDir;
     private boolean isRecordEnabled = false;
 
     public void setRecordEnabled(boolean enabled, String dir) {
-        this.isRecordEnabled = enabled;
-        this.currentRecordDir = dir;
+        isRecordEnabled = enabled;
+        currentRecordDir = dir;
     }
 
     public synchronized int getAmplitude() {
@@ -71,11 +62,8 @@ public class AudioEngine {
             @Override
             public void run() {
                 DatagramSocket talkSocket = null;
-                MediaCodec encoder = null;
-                FileOutputStream fos = null;
+                WavWriter wavWriter = null;
                 try {
-                    // If the app knows the peer IP, use direct unicast.
-                    // Broadcast can loop back to the sender and create harsh noise on some phones.
                     String targetIp = ipAddress;
                     if (isBroadcastAddress(ipAddress) && lastRemoteIp != null) {
                         targetIp = lastRemoteIp;
@@ -98,17 +86,10 @@ public class AudioEngine {
 
                     if (recordPath != null) {
                         try {
-                            File file = new File(recordPath);
-                            if (file.getParentFile() != null) file.getParentFile().mkdirs();
-                            fos = new FileOutputStream(file);
-                            fos.write("#!AMR\n".getBytes());
-                            encoder = createAmrNbEncoder();
-                            encoder.start();
+                            wavWriter = new WavWriter(new File(recordPath));
                         } catch (Exception e) {
                             Log.e(TAG, "Outgoing recording disabled", e);
-                            closeQuietly(fos);
-                            fos = null;
-                            encoder = null;
+                            wavWriter = null;
                         }
                     }
 
@@ -124,27 +105,33 @@ public class AudioEngine {
                         lastAmplitude = getMaxAmplitude(packetBuffer, read);
                         processOutgoingAudio(packetBuffer, read, lastAmplitude);
 
+                        // Live audio is always sent first. Recording must never block transmission.
                         talkSocket.send(new DatagramPacket(packetBuffer, read, address, PORT));
 
-                        if (encoder != null && fos != null) {
+                        if (wavWriter != null) {
                             try {
-                                encodeAndWrite(encoder, fos, packetBuffer, read);
+                                wavWriter.write(packetBuffer, read);
                             } catch (Exception e) {
                                 Log.e(TAG, "Outgoing recording failed", e);
-                                stopEncoderQuietly(encoder);
-                                closeQuietly(fos);
-                                encoder = null;
-                                fos = null;
+                                wavWriter.closeQuietly();
+                                wavWriter = null;
                             }
                         }
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Talk error", e);
                 } finally {
-                    stopInternalTalking(talkSocket, encoder, fos);
+                    releaseRecorder();
+                    lastAmplitude = 0;
+                    if (talkSocket != null) talkSocket.close();
+                    if (wavWriter != null) wavWriter.closeQuietly();
                 }
             }
         }).start();
+    }
+
+    public synchronized void stopTalking() {
+        isRecording = false;
     }
 
     private boolean isBroadcastAddress(String ip) {
@@ -160,38 +147,19 @@ public class AudioEngine {
         return max;
     }
 
-    private synchronized void stopInternalTalking(DatagramSocket socket, MediaCodec encoder, FileOutputStream fos) {
-        releaseRecorder();
-        lastAmplitude = 0;
-        if (socket != null) socket.close();
-        stopEncoderQuietly(encoder);
-        closeQuietly(fos);
-    }
-
-    public synchronized void stopTalking() {
-        isRecording = false;
-    }
-
     private void processOutgoingAudio(byte[] buf, int len, int maxAmplitude) {
         float gain = NORMAL_MIC_GAIN;
 
-        // If a phone microphone is too loud, reduce it before sending.
         if (maxAmplitude > TARGET_MIC_LEVEL) {
             gain = TARGET_MIC_LEVEL / (float) maxAmplitude;
             if (gain < MIN_MIC_GAIN) gain = MIN_MIC_GAIN;
         }
-
-        // Very quiet voice should not be reduced more.
-        if (maxAmplitude < 3000) {
-            gain = 1.0f;
-        }
+        if (maxAmplitude < 3000) gain = 1.0f;
 
         short previous = 0;
         for (int i = 0; i + 1 < len; i += 2) {
             short sample = (short) ((buf[i + 1] << 8) | (buf[i] & 0xff));
             int value = (int) (sample * gain);
-
-            // A tiny smoothing step removes sharp microphone artifacts.
             value = (value + previous) / 2;
             previous = (short) value;
 
@@ -203,45 +171,11 @@ public class AudioEngine {
         }
     }
 
-    private MediaCodec createAmrNbEncoder() throws IOException {
-        MediaFormat fmt = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AMR_NB, AMR_NB_SAMPLE_RATE, 1);
-        fmt.setInteger(MediaFormat.KEY_BIT_RATE, AMR_NB_BIT_RATE);
-        fmt.setInteger(MediaFormat.KEY_SAMPLE_RATE, AMR_NB_SAMPLE_RATE);
-        fmt.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
-        MediaCodec enc = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AMR_NB);
-        enc.configure(fmt, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-        return enc;
-    }
-
-    private synchronized void encodeAndWrite(MediaCodec enc, FileOutputStream fos, byte[] data, int size) throws IOException {
-        int idx = enc.dequeueInputBuffer(0);
-        if (idx >= 0) {
-            ByteBuffer in = enc.getInputBuffer(idx);
-            if (in != null) {
-                in.clear();
-                int bytesToWrite = Math.min(size, in.remaining());
-                in.put(data, 0, bytesToWrite);
-                enc.queueInputBuffer(idx, 0, bytesToWrite, System.nanoTime() / 1000, 0);
-            }
-        }
-
-        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        int out = enc.dequeueOutputBuffer(info, 0);
-        while (out >= 0) {
-            ByteBuffer outBuf = enc.getOutputBuffer(out);
-            if (outBuf != null && info.size > 0) {
-                byte[] outData = new byte[info.size];
-                outBuf.get(outData);
-                fos.write(outData);
-            }
-            enc.releaseOutputBuffer(out, false);
-            out = enc.dequeueOutputBuffer(info, 0);
-        }
-    }
-
     private synchronized void releaseRecorder() {
         if (recorder != null) {
-            try { if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) recorder.stop(); } catch (Exception ignored) {}
+            try {
+                if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) recorder.stop();
+            } catch (Exception ignored) {}
             recorder.release();
             recorder = null;
         }
@@ -254,8 +188,7 @@ public class AudioEngine {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                FileOutputStream fos = null;
-                MediaCodec encoder = null;
+                WavWriter wavWriter = null;
                 try {
                     listenSocket = new DatagramSocket(PORT);
                     listenSocket.setReceiveBufferSize(64 * 1024);
@@ -292,35 +225,29 @@ public class AudioEngine {
                         }
 
                         int max = getMaxAmplitude(packetBuffer, length);
+
+                        // Playback happens before optional saving, so recording cannot disturb live audio.
                         track.write(packetBuffer, 0, length);
 
                         if (isRecordEnabled && currentRecordDir != null) {
-                            if (max >= RECORDING_START_THRESHOLD && fos == null) {
+                            if (max >= RECORDING_START_THRESHOLD && wavWriter == null) {
                                 try {
                                     File dir = new File(currentRecordDir);
                                     if (!dir.exists()) dir.mkdirs();
                                     String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(new java.util.Date());
-                                    fos = new FileOutputStream(new File(dir, ts + "_IN.amr"));
-                                    fos.write("#!AMR\n".getBytes());
-                                    encoder = createAmrNbEncoder();
-                                    encoder.start();
+                                    wavWriter = new WavWriter(new File(dir, ts + "_IN.wav"));
                                 } catch (Exception e) {
                                     Log.e(TAG, "Incoming recording disabled", e);
-                                    closeQuietly(fos);
-                                    fos = null;
-                                    encoder = null;
+                                    wavWriter = null;
                                 }
                             }
-
-                            if (encoder != null && fos != null) {
+                            if (wavWriter != null) {
                                 try {
-                                    encodeAndWrite(encoder, fos, packetBuffer, length);
+                                    wavWriter.write(packetBuffer, length);
                                 } catch (Exception e) {
                                     Log.e(TAG, "Incoming recording failed", e);
-                                    stopEncoderQuietly(encoder);
-                                    closeQuietly(fos);
-                                    encoder = null;
-                                    fos = null;
+                                    wavWriter.closeQuietly();
+                                    wavWriter = null;
                                 }
                             }
                         }
@@ -328,30 +255,12 @@ public class AudioEngine {
                 } catch (Exception e) {
                     if (isPlaying) Log.e(TAG, "Listen error", e);
                 } finally {
-                    stopInternalListening(encoder, fos);
+                    releaseTrack();
+                    if (listenSocket != null) { listenSocket.close(); listenSocket = null; }
+                    if (wavWriter != null) wavWriter.closeQuietly();
                 }
             }
         }).start();
-    }
-
-    private synchronized void stopInternalListening(MediaCodec encoder, FileOutputStream fos) {
-        releaseTrack();
-        if (listenSocket != null) { listenSocket.close(); listenSocket = null; }
-        stopEncoderQuietly(encoder);
-        closeQuietly(fos);
-    }
-
-    private void stopEncoderQuietly(MediaCodec encoder) {
-        if (encoder != null) {
-            try { encoder.stop(); } catch (Exception ignored) {}
-            try { encoder.release(); } catch (Exception ignored) {}
-        }
-    }
-
-    private void closeQuietly(FileOutputStream fos) {
-        if (fos != null) {
-            try { fos.close(); } catch (IOException ignored) {}
-        }
     }
 
     public synchronized void stopListening() {
@@ -361,7 +270,9 @@ public class AudioEngine {
 
     private synchronized void releaseTrack() {
         if (track != null) {
-            try { if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) track.stop(); } catch (Exception ignored) {}
+            try {
+                if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) track.stop();
+            } catch (Exception ignored) {}
             track.release();
             track = null;
         }
@@ -370,5 +281,64 @@ public class AudioEngine {
     public void release() {
         stopTalking();
         stopListening();
+    }
+
+    private static class WavWriter {
+        private final RandomAccessFile file;
+        private int dataSize = 0;
+
+        WavWriter(File output) throws IOException {
+            File parent = output.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
+            file = new RandomAccessFile(output, "rw");
+            file.setLength(0);
+            writeHeader(0);
+        }
+
+        void write(byte[] data, int length) throws IOException {
+            file.write(data, 0, length);
+            dataSize += length;
+        }
+
+        void closeQuietly() {
+            try {
+                updateHeader();
+                file.close();
+            } catch (Exception ignored) {}
+        }
+
+        private void updateHeader() throws IOException {
+            file.seek(0);
+            writeHeader(dataSize);
+        }
+
+        private void writeHeader(int pcmDataSize) throws IOException {
+            int byteRate = SAMPLE_RATE * 2;
+            file.writeBytes("RIFF");
+            writeIntLE(36 + pcmDataSize);
+            file.writeBytes("WAVE");
+            file.writeBytes("fmt ");
+            writeIntLE(16);
+            writeShortLE((short) 1);
+            writeShortLE((short) 1);
+            writeIntLE(SAMPLE_RATE);
+            writeIntLE(byteRate);
+            writeShortLE((short) 2);
+            writeShortLE((short) 16);
+            file.writeBytes("data");
+            writeIntLE(pcmDataSize);
+        }
+
+        private void writeIntLE(int value) throws IOException {
+            file.write(value & 0xff);
+            file.write((value >> 8) & 0xff);
+            file.write((value >> 16) & 0xff);
+            file.write((value >> 24) & 0xff);
+        }
+
+        private void writeShortLE(short value) throws IOException {
+            file.write(value & 0xff);
+            file.write((value >> 8) & 0xff);
+        }
     }
 }
