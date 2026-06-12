@@ -2,12 +2,9 @@ package com.tfajfar.walkietalkie.ui.main;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.TypedValue;
@@ -33,11 +30,6 @@ import com.tfajfar.walkietalkie.R;
 import com.tfajfar.walkietalkie.core.AudioEngine;
 import com.tfajfar.walkietalkie.core.WifiDirectManager;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 public class MainFragment extends Fragment implements WifiDirectManager.ConnectionListener {
 
     private AudioEngine audioEngine;
@@ -48,7 +40,6 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
     private SwitchMaterial recordSwitch;
     private TextView tvRecordStatus;
     private View pttButton;
-    private SharedPreferences prefs;
     private boolean connectedMessageShown = false;
 
     @Nullable
@@ -57,7 +48,6 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
                              @Nullable Bundle savedInstanceState) {
         wifiDirectManager = WifiDirectManager.getInstance(requireContext());
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-        prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE);
         return inflater.inflate(R.layout.fragment_main, container, false);
     }
 
@@ -69,64 +59,83 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         recordSwitch = view.findViewById(R.id.recordTransmissionsSwitch);
         tvRecordStatus = view.findViewById(R.id.tv_record_status);
         view.findViewById(R.id.snackbar_container).setVisibility(View.GONE);
-        boolean isRecordOn = prefs.getBoolean("record_transmissions", false);
-        recordSwitch.setChecked(isRecordOn);
-        updateRecordStatusText(isRecordOn);
+
+        refreshRecordSwitch();
         recordSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                prefs.edit().putBoolean("record_transmissions", isChecked).apply();
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                viewModel.setRecordTransmissionsEnabled(isChecked);
                 updateRecordStatusText(isChecked);
                 updateAudioEngineRecording();
             }
         });
+
         pttButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override public boolean onTouch(View v, MotionEvent event) {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
                 if (!pttButton.isEnabled()) return false;
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        v.setPressed(true); viewModel.setIsTalking(true); startTalking(); return true;
+                        v.setPressed(true);
+                        viewModel.setIsTalking(true);
+                        startTalking();
+                        return true;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
-                        v.setPressed(false); viewModel.setIsTalking(false);
+                        v.setPressed(false);
+                        viewModel.setIsTalking(false);
                         if (audioEngine != null) audioEngine.stopTalking();
                         return true;
                 }
                 return false;
             }
         });
+
         view.findViewById(R.id.btn_close_snack).setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
+            @Override
+            public void onClick(View v) {
                 View snack = getView().findViewById(R.id.snackbar_container);
                 if (snack != null) snack.setVisibility(View.GONE);
             }
         });
+
         view.findViewById(R.id.toolbar).setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
+            @Override
+            public void onClick(View v) {
                 androidx.drawerlayout.widget.DrawerLayout drawer = requireActivity().findViewById(R.id.drawer_layout);
                 if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
             }
         });
+
         view.findViewById(R.id.card_devices).setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.nav_devices));
         view.findViewById(R.id.card_bottom_status).setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.action_main_to_status));
         setupObservers(view);
     }
 
-    @Override public void onResume() {
+    @Override
+    public void onResume() {
         super.onResume();
         wifiDirectManager.addConnectionListener(this);
         wifiDirectManager.registerReceiver();
-        if (audioEngine == null) { audioEngine = new AudioEngine(); updateAudioEngineRecording(); }
-        audioEngine.startListening(); checkPermissionsAndEnableUI(); updateUI();
+        if (audioEngine == null) {
+            audioEngine = new AudioEngine();
+        }
+        refreshRecordSwitch();
+        audioEngine.startListening();
+        checkPermissionsAndEnableUI();
+        updateUI();
     }
 
-    @Override public void onPause() {
+    @Override
+    public void onPause() {
         super.onPause();
         if (audioEngine != null) audioEngine.stopTalking();
         wifiDirectManager.removeConnectionListener(this);
         wifiDirectManager.unregisterReceiver();
     }
 
-    @Override public void onDestroyView() {
+    @Override
+    public void onDestroyView() {
         super.onDestroyView();
         handler.removeCallbacksAndMessages(null);
         snackHandler.removeCallbacksAndMessages(null);
@@ -134,16 +143,25 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
     }
 
     private void releaseAudioEngine() {
-        if (audioEngine != null) { audioEngine.stopTalking(); audioEngine.release(); audioEngine = null; }
+        if (audioEngine != null) {
+            audioEngine.stopTalking();
+            audioEngine.release();
+            audioEngine = null;
+        }
+    }
+
+    private void refreshRecordSwitch() {
+        boolean isRecordOn = viewModel.isRecordTransmissionsEnabled();
+        if (recordSwitch != null) recordSwitch.setChecked(isRecordOn);
+        updateRecordStatusText(isRecordOn);
+        updateAudioEngineRecording();
     }
 
     private void updateAudioEngineRecording() {
         if (audioEngine == null) return;
-        audioEngine.setRecordEnabled(prefs.getBoolean("record_transmissions", false), getRecordingDir().getAbsolutePath());
-    }
-
-    private File getRecordingDir() {
-        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "P2PWalkieTalkie");
+        audioEngine.setRecordEnabled(
+                viewModel.isRecordTransmissionsEnabled(),
+                viewModel.getRecordingDirectoryPath());
     }
 
     private void startTalking() {
@@ -151,13 +169,13 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         WifiP2pInfo info = wifiDirectManager.getConnectionInfo();
         if (info == null || !info.groupFormed) {
             Toast.makeText(getContext(), R.string.not_connected, Toast.LENGTH_SHORT).show();
-            viewModel.setIsTalking(false); return;
+            viewModel.setIsTalking(false);
+            return;
         }
         String targetIp = info.isGroupOwner ? "192.168.49.255" : info.groupOwnerAddress.getHostAddress();
         String recordPath = null;
-        if (prefs.getBoolean("record_transmissions", false)) {
-            String ts = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            recordPath = new File(getRecordingDir(), ts + "_OUT.amr").getAbsolutePath();
+        if (viewModel.isRecordTransmissionsEnabled()) {
+            recordPath = viewModel.createOutgoingRecordingPath();
         }
         audioEngine.startTalking(targetIp, recordPath);
     }
@@ -171,17 +189,21 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         final View volumeIndicator = view.findViewById(R.id.volume_level_indicator);
         final View snackbar = view.findViewById(R.id.snackbar_container);
         final View cardBottom = view.findViewById(R.id.card_bottom_status);
+
         viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), new Observer<String>() {
-            @Override public void onChanged(String status) {
+            @Override
+            public void onChanged(String status) {
                 tvStatusTitle.setText(status);
                 int color;
                 if (status.equals(getString(R.string.connected))) color = ContextCompat.getColor(requireContext(), R.color.greenAccent);
                 else if (status.equals(getString(R.string.searching))) color = ContextCompat.getColor(requireContext(), R.color.dotYellow);
                 else if (status.equals(getString(R.string.status_connecting_title))) color = ContextCompat.getColor(requireContext(), R.color.orangeAccent);
                 else color = ContextCompat.getColor(requireContext(), R.color.dotGrey);
-                tvStatusTitle.setTextColor(color); ivWifi.setColorFilter(color);
+                tvStatusTitle.setTextColor(color);
+                ivWifi.setColorFilter(color);
             }
         });
+
         viewModel.getConnectionDesc().observe(getViewLifecycleOwner(), desc -> tvStatusDesc.setText(desc));
         viewModel.getConnectedPeersCount().observe(getViewLifecycleOwner(), count -> {
             tvPeersCount.setText(getString(R.string.devices_connected_count, count));
@@ -192,7 +214,8 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
                     tvSnackText.setText(getString(R.string.connected_to_devices_snackbar, count));
                     snackbar.setVisibility(View.VISIBLE);
                     snackHandler.postDelayed(new Runnable() {
-                        @Override public void run() {
+                        @Override
+                        public void run() {
                             snackbar.setVisibility(View.GONE);
                         }
                     }, 3000);
@@ -203,10 +226,17 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
                 cardBottom.setVisibility(View.GONE);
             }
         });
+
         viewModel.getAudioLevel().observe(getViewLifecycleOwner(), level -> {
-            if (volumeIndicator != null) { ViewGroup.LayoutParams p = volumeIndicator.getLayoutParams(); p.height = level; volumeIndicator.setLayoutParams(p); }
+            if (volumeIndicator != null) {
+                ViewGroup.LayoutParams p = volumeIndicator.getLayoutParams();
+                p.height = level;
+                volumeIndicator.setLayoutParams(p);
+            }
         });
-        viewModel.getIsTalking().observe(getViewLifecycleOwner(), talking -> { if (talking) startVolumeAnimation(); else stopVolumeAnimation(); });
+        viewModel.getIsTalking().observe(getViewLifecycleOwner(), talking -> {
+            if (talking) startVolumeAnimation(); else stopVolumeAnimation();
+        });
     }
 
     private void checkPermissionsAndEnableUI() {
@@ -214,30 +244,41 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
         boolean connected = info != null && info.groupFormed;
         boolean hasMic = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
         boolean canTalk = hasMic && wifiDirectManager.hasPermissions() && connected;
-        pttButton.setEnabled(canTalk); pttButton.setAlpha(canTalk ? 1.0f : 0.5f);
+        pttButton.setEnabled(canTalk);
+        pttButton.setAlpha(canTalk ? 1.0f : 0.5f);
     }
 
     private void updateRecordStatusText(boolean isOn) {
         if (tvRecordStatus != null) {
             tvRecordStatus.setText(isOn ? R.string.status_on : R.string.status_off);
-            tvRecordStatus.setTextColor(isOn ? ContextCompat.getColor(requireContext(), R.color.greenAccent) : ContextCompat.getColor(requireContext(), R.color.textSecondary));
+            tvRecordStatus.setTextColor(isOn
+                    ? ContextCompat.getColor(requireContext(), R.color.greenAccent)
+                    : ContextCompat.getColor(requireContext(), R.color.textSecondary));
         }
     }
 
     private void startVolumeAnimation() {
         handler.removeCallbacksAndMessages(null);
-        handler.post(new Runnable() { @Override public void run() {
-            if (!isAdded() || getView() == null) return;
-            Boolean talking = viewModel.getIsTalking().getValue();
-            if (talking != null && talking && audioEngine != null) {
-                float maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 220, getResources().getDisplayMetrics());
-                int amp = audioEngine.getAmplitude(); int h = (int) ((amp / 32767.0) * maxPx); if (h < 20 && amp > 0) h = 20;
-                viewModel.setAudioLevel(h); handler.postDelayed(this, 50);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (!isAdded() || getView() == null) return;
+                Boolean talking = viewModel.getIsTalking().getValue();
+                if (talking != null && talking && audioEngine != null) {
+                    float maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 220, getResources().getDisplayMetrics());
+                    int amp = audioEngine.getAmplitude();
+                    int h = (int) ((amp / 32767.0) * maxPx);
+                    if (h < 20 && amp > 0) h = 20;
+                    viewModel.setAudioLevel(h);
+                    handler.postDelayed(this, 50);
+                }
             }
-        }});
+        });
     }
 
-    private void stopVolumeAnimation() { viewModel.setAudioLevel(0); }
+    private void stopVolumeAnimation() {
+        viewModel.setAudioLevel(0);
+    }
 
     private void updateUI() {
         WifiP2pInfo info = wifiDirectManager.getConnectionInfo();
@@ -247,17 +288,46 @@ public class MainFragment extends Fragment implements WifiDirectManager.Connecti
             viewModel.setConnectionDesc(getString(info.isGroupOwner ? R.string.status_connected_owner_title : R.string.status_connected_client_title));
             viewModel.setConnectedPeersCount(1);
         } else {
-            if (state == WifiDirectManager.ConnectionState.DISCOVERING) { viewModel.setConnectionStatus(getString(R.string.searching)); viewModel.setConnectionDesc(getString(R.string.status_searching_desc)); }
-            else if (state == WifiDirectManager.ConnectionState.CONNECTING) { viewModel.setConnectionStatus(getString(R.string.status_connecting_title)); viewModel.setConnectionDesc(getString(R.string.status_connecting_desc)); }
-            else { viewModel.setConnectionStatus(getString(R.string.status_disconnected_title)); viewModel.setConnectionDesc(getString(R.string.status_disconnected_desc)); }
+            if (state == WifiDirectManager.ConnectionState.DISCOVERING) {
+                viewModel.setConnectionStatus(getString(R.string.searching));
+                viewModel.setConnectionDesc(getString(R.string.status_searching_desc));
+            } else if (state == WifiDirectManager.ConnectionState.CONNECTING) {
+                viewModel.setConnectionStatus(getString(R.string.status_connecting_title));
+                viewModel.setConnectionDesc(getString(R.string.status_connecting_desc));
+            } else {
+                viewModel.setConnectionStatus(getString(R.string.status_disconnected_title));
+                viewModel.setConnectionDesc(getString(R.string.status_disconnected_desc));
+            }
             viewModel.setConnectedPeersCount(0);
         }
         checkPermissionsAndEnableUI();
     }
 
-    @Override public void onConnectionInfoAvailable(WifiP2pInfo info) { if (isAdded()) requireActivity().runOnUiThread(this::updateUI); }
-    @Override public void onDisconnected() { if (isAdded()) requireActivity().runOnUiThread(this::updateUI); }
-    @Override public void onWifiP2pEnabled(boolean enabled) { if (isAdded()) requireActivity().runOnUiThread(this::updateUI); }
-    @Override public void onConnectionRetrying(int attempt, int max) { if (isAdded()) requireActivity().runOnUiThread(this::updateUI); }
-    @Override public void onConnectionFailed(final int reason) { if (isAdded()) requireActivity().runOnUiThread(() -> { updateUI(); Toast.makeText(getContext(), getString(R.string.connection_failed, reason), Toast.LENGTH_SHORT).show(); }); }
+    @Override
+    public void onConnectionInfoAvailable(WifiP2pInfo info) {
+        if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
+    }
+
+    @Override
+    public void onDisconnected() {
+        if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
+    }
+
+    @Override
+    public void onWifiP2pEnabled(boolean enabled) {
+        if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
+    }
+
+    @Override
+    public void onConnectionRetrying(int attempt, int max) {
+        if (isAdded()) requireActivity().runOnUiThread(this::updateUI);
+    }
+
+    @Override
+    public void onConnectionFailed(final int reason) {
+        if (isAdded()) requireActivity().runOnUiThread(() -> {
+            updateUI();
+            Toast.makeText(getContext(), getString(R.string.connection_failed, reason), Toast.LENGTH_SHORT).show();
+        });
+    }
 }

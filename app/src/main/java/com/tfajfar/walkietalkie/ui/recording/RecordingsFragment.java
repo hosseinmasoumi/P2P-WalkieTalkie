@@ -3,7 +3,6 @@ package com.tfajfar.walkietalkie.ui.recording;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +11,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,16 +22,12 @@ import com.google.android.material.snackbar.Snackbar;
 import com.tfajfar.walkietalkie.R;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class RecordingsFragment extends Fragment implements RecordingsAdapter.OnRecordingClickListener {
 
     private RecordingsAdapter adapter;
+    private RecordingsViewModel viewModel;
     private View emptyState;
 
     @Nullable
@@ -44,6 +41,7 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        viewModel = new ViewModelProvider(this).get(RecordingsViewModel.class);
         emptyState = view.findViewById(R.id.tv_empty_recordings);
 
         RecyclerView rv = view.findViewById(R.id.rv_recordings);
@@ -57,47 +55,22 @@ public class RecordingsFragment extends Fragment implements RecordingsAdapter.On
             if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
         });
 
-        loadRecordings();
-    }
-
-    private File getRecordingDir() {
-        File musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
-        return new File(musicDir, "P2PWalkieTalkie");
+        viewModel.getRecordings().observe(getViewLifecycleOwner(), new Observer<List<File>>() {
+            @Override
+            public void onChanged(List<File> files) {
+                adapter.updateRecordings(files);
+                if (emptyState != null) {
+                    emptyState.setVisibility(files.isEmpty() ? View.VISIBLE : View.GONE);
+                }
+            }
+        });
+        viewModel.loadRecordings();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        loadRecordings();
-    }
-
-    private void loadRecordings() {
-        File dir = getRecordingDir();
-
-        if (dir.exists()) {
-            File[] files = dir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File f) {
-                    return f.isFile() && f.getName().toLowerCase().endsWith(".amr");
-                }
-            });
-
-            if (files != null && files.length > 0) {
-                List<File> fileList = new ArrayList<File>(Arrays.asList(files));
-                Collections.sort(fileList, new Comparator<File>() {
-                    @Override
-                    public int compare(File f1, File f2) {
-                        return Long.valueOf(f2.lastModified()).compareTo(f1.lastModified());
-                    }
-                });
-                adapter.updateRecordings(fileList);
-                if (emptyState != null) emptyState.setVisibility(View.GONE);
-                return;
-            }
-        }
-
-        adapter.updateRecordings(new ArrayList<File>());
-        if (emptyState != null) emptyState.setVisibility(View.VISIBLE);
+        if (viewModel != null) viewModel.loadRecordings();
     }
 
     @Override
